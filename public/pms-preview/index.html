@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Project Management System — DevTrack</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --purple:#7c3aed;--purple-light:#a78bfa;
+  --sidebar-bg:#10122a;--main-dark:#0d0f22;
+  --topbar-bg:#111330;--surface:#181a38;
+  --border:rgba(139,92,246,0.14);--text:#e2e8f0;
+  --text-muted:#94a3b8;--text-dim:#64748b;
+}
+html,body{height:100%;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;font-size:13px;overflow:hidden;background:#0d0f22}
+.app{display:flex;height:100vh}
+
+/* ── SIDEBAR ─────────────────────────────────── */
+.sidebar{width:200px;background:var(--sidebar-bg);display:flex;flex-direction:column;flex-shrink:0;border-right:1px solid var(--border)}
+.sb-header{padding:13px 12px 11px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px}
+.sb-logo{width:32px;height:32px;border-radius:8px;background:var(--purple);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:800;flex-shrink:0}
+.sb-name{font-size:10px;font-weight:700;color:var(--text);letter-spacing:.02em;line-height:1.35}
+.sb-sub{font-size:9px;color:var(--text-muted);margin-top:1px}
+.sb-nav{flex:1;padding:7px 0;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;color:var(--text-muted);font-size:12.5px;transition:all .15s;border-left:3px solid transparent}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,.04)}
+.nav-item.active{color:var(--purple-light);background:rgba(124,58,237,.15);border-left-color:var(--purple-light)}
+.nav-icon{width:15px;height:15px;flex-shrink:0;opacity:.85}
+.sb-user{padding:11px 12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.user-av{width:28px;height:28px;border-radius:50%;background:var(--purple);display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700;flex-shrink:0}
+.user-name{font-size:11.5px;color:var(--text);font-weight:500}
+.user-role{font-size:9.5px;color:var(--text-muted)}
+
+/* ── MAIN ────────────────────────────────────── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:52px;background:var(--topbar-bg);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:8px;flex-shrink:0}
+.tb-workspace{display:flex;flex-direction:column;margin-right:4px}
+.tb-ws-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;margin-right:4px}
+.tb-ws-label{font-size:9px;color:var(--text-muted);letter-spacing:.06em;display:flex;align-items:center}
+.tb-ws-title{font-size:15px;font-weight:600;color:var(--text);line-height:1.2}
+.tb-spacer{flex:1}
+.view-btn{padding:5px 13px;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;background:rgba(255,255,255,.07);color:var(--text-muted);transition:all .15s;font-family:inherit}
+.view-btn.active{background:var(--purple);color:#fff}
+.view-btn:hover:not(.active){background:rgba(255,255,255,.12);color:var(--text)}
+.range-btns{display:flex;gap:3px}
+.range-btn{padding:4px 9px;border:none;border-radius:5px;font-size:11px;cursor:pointer;background:rgba(255,255,255,.07);color:var(--text-muted);transition:all .15s;font-family:inherit}
+.range-btn.active{background:var(--purple);color:#fff}
+.range-btn:hover:not(.active){background:rgba(255,255,255,.12);color:var(--text)}
+.ver-badge{font-size:10px;color:var(--text-dim);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);padding:2px 7px;border-radius:4px}
+.claro-btn{display:flex;align-items:center;gap:5px;padding:5px 10px;border:1px solid rgba(255,255,255,.12);border-radius:7px;background:rgba(255,255,255,.06);color:var(--text);cursor:pointer;font-size:11.5px;font-weight:500;font-family:inherit}
+.claro-btn:hover{background:rgba(255,255,255,.12)}
+.refresh-btn{width:30px;height:30px;border:1px solid rgba(255,255,255,.1);border-radius:6px;background:transparent;color:var(--text-dim);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px}
+.refresh-btn:hover{background:rgba(255,255,255,.07)}
+.btn-nueva{padding:6px 13px;background:var(--purple);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:inherit}
+.btn-nueva:hover{background:#6d28d9}
+
+/* ── VIEWS ───────────────────────────────────── */
+.view{display:none;flex:1;overflow:hidden}
+.view.active{display:flex}
+
+/* ══ KANBAN ══════════════════════════════════ */
+.kanban-view{flex-direction:column;background:#f0f2f5}
+.k-topbar{padding:10px 16px;display:flex;align-items:center;gap:8px;background:#fff;border-bottom:1px solid #e5e7eb;flex-shrink:0;flex-wrap:wrap}
+.k-search{border:1px solid #d1d5db;border-radius:7px;padding:5px 10px 5px 28px;font-size:12px;background:white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") 8px center no-repeat;color:#374151;width:170px;outline:none;font-family:inherit}
+.k-search::placeholder{color:#9ca3af}
+.k-select{border:1px solid #d1d5db;border-radius:7px;padding:5px 8px;font-size:11.5px;background:white;color:#374151;cursor:pointer;outline:none;font-family:inherit}
+.k-tr{margin-left:auto;display:flex;gap:7px;align-items:center}
+.k-btn-alt{padding:5px 10px;border:1px solid #d1d5db;border-radius:7px;font-size:11.5px;background:white;color:#374151;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:inherit}
+.k-btn-alt:hover{background:#f9fafb}
+.k-header{padding:10px 16px 0}
+.k-title{font-size:15px;font-weight:600;color:#111827}
+.k-show-row{display:flex;gap:4px;margin-top:8px}
+.k-show-btn{padding:5px 14px;border-radius:6px;border:none;font-size:12px;font-weight:500;cursor:pointer;background:transparent;color:#6b7280;transition:all .15s;font-family:inherit}
+.k-show-btn.active{background:var(--purple);color:#fff}
+.k-show-btn:hover:not(.active){background:#e5e7eb}
+.kanban-cols{display:flex;gap:0;padding:12px 14px;overflow-x:auto;flex:1;align-items:flex-start}
+.k-col{flex:1;min-width:220px;max-width:300px;border-radius:10px;overflow:hidden;margin:0 5px;display:flex;flex-direction:column}
+.k-col-hdr{padding:10px 13px;display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.06em;color:rgba(255,255,255,.9)}
+.k-cnt{width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff}
+.k-col-body{padding:8px;display:flex;flex-direction:column;gap:7px;flex:1}
+.col-ni .k-col-hdr{background:#374151}
+.col-ni .k-col-body{background:#2d3344}
+.col-ed .k-col-hdr{background:#1e3a5f}
+.col-ed .k-col-body{background:#19325a}
+.col-fn .k-col-hdr{background:#14532d}
+.col-fn .k-col-body{background:#112b1e;min-height:260px}
+.col-bl .k-col-hdr{background:#7f1d1d}
+.col-bl .k-col-body{background:#6b1a1a}
+.k-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.09);border-radius:8px;padding:10px 12px}
+.k-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.k-id{font-size:10.5px;color:#a78bfa;font-weight:600}
+.k-badge{font-size:9.5px;font-weight:600;padding:2px 7px;border-radius:4px;background:rgba(245,158,11,.18);color:#fbbf24}
+.k-badge.alta{background:rgba(239,68,68,.18);color:#f87171}
+.k-badge.baja{background:rgba(34,197,94,.18);color:#4ade80}
+.k-card-title{font-size:12px;font-weight:500;color:#e2e8f0;margin-bottom:8px;line-height:1.4}
+.k-card-footer{display:flex;align-items:center;justify-content:flex-end}
+.av{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff}
+.av-at{background:#0891b2}.av-cm{background:#2563eb}.av-sv{background:#7c3aed}.av-dr{background:#16a34a}
+
+/* ══ GANTT ═══════════════════════════════════ */
+.gantt-view{flex-direction:row;overflow:hidden;background:#f5f3ff}
+.gantt-main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#f5f3ff}
+.g-legend{display:flex;align-items:center;gap:14px;padding:8px 14px;border-bottom:1px solid #ddd6fe;flex-shrink:0;flex-wrap:wrap;background:#ede9ff}
+.leg{display:flex;align-items:center;gap:5px;font-size:10.5px;color:#4c4075}
+.leg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.ld-fn{background:#22c55e}.ld-ed{background:#6366f1}.ld-bl{background:#ef4444}.ld-ni{background:#94a3b8}
+.ld-ot{background:#c4b5fd;border:1px solid #a78bfa}
+.ld-hito{background:#22c55e;transform:rotate(45deg);width:7px;height:7px;border-radius:1px}
+.gantt-body{flex:1;display:flex;overflow:hidden}
+.g-task-list{width:240px;flex-shrink:0;border-right:1px solid #ddd6fe;overflow-y:auto;display:flex;flex-direction:column;background:#fff}
+.g-proj-hdr{padding:8px 12px;font-size:10.5px;font-weight:700;color:#6d28d9;letter-spacing:.05em;border-bottom:1px solid #ddd6fe;display:flex;align-items:center;gap:6px;flex-shrink:0;height:40px;background:#ede9ff}
+.g-proj-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;flex-shrink:0}
+.g-row{display:flex;align-items:center;gap:7px;padding:0 12px;border-bottom:1px solid #ede9f8;height:36px;cursor:default;background:#fff}
+.g-row:hover{background:#f5f3ff}
+.g-tid{color:#7c3aed;font-size:10px;font-weight:600;width:54px;flex-shrink:0}
+.g-tname{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px;color:#374151}
+.g-timer{color:#ef4444;font-size:12px}
+
+/* Timeline */
+.g-timeline{flex:1;overflow-x:auto;overflow-y:hidden;display:flex;flex-direction:column;position:relative;background:#fff}
+.g-timeline::-webkit-scrollbar{height:5px}
+.g-timeline::-webkit-scrollbar-thumb{background:#c4b5fd;border-radius:3px}
+.g-months-hdr{display:flex;flex-shrink:0;border-bottom:1px solid #ddd6fe;height:40px;background:#ede9ff}
+.g-month{font-size:10px;color:#6d28d9;font-weight:500;display:flex;align-items:center;justify-content:center;border-right:1px solid #ddd6fe;flex-shrink:0}
+.g-rows-wrap{position:relative;flex:1;overflow:hidden}
+.g-trow{height:36px;border-bottom:1px solid #ede9f8;position:relative;background:#fff}
+.g-trow:hover{background:#f5f3ff}
+.g-bar{position:absolute;height:20px;top:8px;border-radius:4px}
+.bar-fn{background:#22c55e}.bar-ed{background:linear-gradient(90deg,#818cf8 40%,#6366f1 100%)}
+.bar-ni{background:#cbd5e1}.bar-bl{background:#e2e8f0;border:1px solid rgba(239,68,68,.5)}
+.today-line{position:absolute;top:0;bottom:0;width:2px;background:#6366f1;opacity:.85;z-index:3;pointer-events:none}
+
+/* Panel */
+.g-panel{width:268px;background:#f8f6ff;border-left:1px solid #ddd6fe;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.g-panel::-webkit-scrollbar{width:3px}
+.g-panel::-webkit-scrollbar-thumb{background:#c4b5fd;border-radius:2px}
+.p-hdr{padding:12px 14px;border-bottom:1px solid #ddd6fe;display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:#1e1b4b;flex-shrink:0;background:#f8f6ff}
+.p-online{width:7px;height:7px;border-radius:50%;background:#22c55e;flex-shrink:0}
+.p-sec{padding:12px 14px;border-bottom:1px solid #ede9f8}
+.p-sec-title{font-size:9.5px;font-weight:700;color:#7c3aed;letter-spacing:.06em;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.p-input{width:100%;background:#fff;border:1px solid #ddd6fe;border-radius:6px;padding:7px 10px;font-size:11px;color:#374151;outline:none;font-family:inherit}
+.p-input::placeholder{color:#a78bfa}
+.p-input:focus{border-color:#7c3aed}
+.p-select{width:100%;background:#fff;border:1px solid #ddd6fe;border-radius:6px;padding:7px 10px;font-size:11px;color:#374151;outline:none;cursor:pointer;font-family:inherit;-webkit-appearance:none;appearance:none}
+.p-select option{background:#fff;color:#374151}
+.p-select:focus{border-color:#7c3aed}
+.p-btn-clear{display:flex;align-items:center;justify-content:center;gap:5px;margin:12px 14px 4px;padding:8px;background:transparent;border:1px solid #ddd6fe;border-radius:7px;color:#7c3aed;font-size:11.5px;cursor:pointer;font-family:inherit;transition:all .15s}
+.p-btn-clear:hover{background:#ede9ff;color:#5b21b6}
+.p-shortcuts{padding:12px 14px}
+.p-shortcut{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:10.5px;color:#6b7280}
+.p-key{font-size:9.5px;color:#6d28d9;background:#ede9ff;padding:2px 6px;border-radius:3px;font-family:monospace}
+.p-filtros-btn{margin:0 14px 12px;padding:9px;display:flex;align-items:center;justify-content:center;gap:6px;background:#ede9ff;border:1px solid #c4b5fd;border-radius:7px;color:#6d28d9;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit}
+.p-filtros-btn:hover{background:#ddd6fe}
+
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:rgba(0,0,0,.03)}
+::-webkit-scrollbar-thumb{background:#c4b5fd;border-radius:2px}
+::-webkit-scrollbar-thumb:hover{background:#a78bfa}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-header">
+    <div class="sb-logo">PS</div>
+    <div>
+      <div class="sb-name">PROJECT MANAGEMENT<br>SYSTEM</div>
+      <div class="sb-sub">DevTrack Workspace</div>
+    </div>
+  </div>
+  <nav class="sb-nav">
+    <div class="nav-item" onclick="nav(this)">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Mi Tablero
+    </div>
+    <div class="nav-item active" onclick="nav(this)">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      Tareas
+    </div>
+    <div class="nav-item" onclick="nav(this)">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+      Tickets Jira
+    </div>
+    <div class="nav-item" onclick="nav(this)">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+      Proyectos
+    </div>
+    <div class="nav-item" onclick="nav(this)">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      Equipo
+    </div>
+  </nav>
+  <div class="sb-user">
+    <div class="user-av">AS</div>
+    <div>
+      <div class="user-name">Andrés Soto</div>
+      <div class="user-role">Admin</div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="tb-workspace">
+      <div class="tb-ws-label"><span class="tb-ws-dot"></span>DEVTRACK WORKSPACE</div>
+      <div class="tb-ws-title">Gestión de Tareas</div>
+    </div>
+    <button class="view-btn" id="btn-kanban" onclick="switchView('kanban')">Kanban</button>
+    <button class="view-btn active" id="btn-gantt" onclick="switchView('gantt')">Gantt</button>
+    <div class="range-btns" id="range-btns" style="display:flex">
+      <button class="range-btn" onclick="setRange(this)">Semana</button>
+      <button class="range-btn" onclick="setRange(this)">Mes</button>
+      <button class="range-btn active" onclick="setRange(this)">6 Meses</button>
+    </div>
+    <div class="tb-spacer"></div>
+    <span class="ver-badge">v1.0</span>
+    <button class="claro-btn">☀ Claro</button>
+    <button class="refresh-btn">↻</button>
+    <button class="btn-nueva">+ Nueva</button>
+  </div>
+
+  <!-- ══ KANBAN VIEW ══ -->
+  <div class="view kanban-view" id="view-kanban">
+    <div class="k-topbar">
+      <input class="k-search" placeholder="Buscar..."/>
+      <select class="k-select"><option>RELEASE - SPRINT 3</option></select>
+      <select class="k-select"><option>Todos los estados</option><option>No iniciada</option><option>En desarrollo</option><option>Finalizada</option><option>Bloqueada</option></select>
+      <select class="k-select"><option>Todos los sprints</option><option>Sprint 1</option><option>Sprint 2</option><option>Sprint 3</option></select>
+      <select class="k-select"><option>Todas las prioridades</option><option>Alta</option><option>Media</option><option>Baja</option></select>
+      <select class="k-select"><option>Todos los responsables</option><option>Ana Torres</option><option>Carlos Mendez</option><option>Sofia Vargas</option><option>Diego Ramirez</option></select>
+      <div class="k-tr">
+        <button class="btn-nueva">+ Nueva Tarea</button>
+        <button class="k-btn-alt">📅 Al Tablero</button>
+      </div>
+    </div>
+    <div class="k-header">
+      <div class="k-title">Tareas del Proyecto</div>
+      <div class="k-show-row">
+        <button class="k-show-btn active" onclick="setShow(this)">Todos</button>
+        <button class="k-show-btn" onclick="setShow(this)">Mis tareas</button>
+      </div>
+    </div>
+    <div class="kanban-cols">
+      <!-- NO INICIADA -->
+      <div class="k-col col-ni">
+        <div class="k-col-hdr">NO INICIADA <div class="k-cnt">1</div></div>
+        <div class="k-col-body">
+          <div class="k-card">
+            <div class="k-card-top"><span class="k-id">TSK-109</span><span class="k-badge">Media</span></div>
+            <div class="k-card-title">Pruebas de carga y performance</div>
+            <div class="k-card-footer"><div class="av av-at">AT</div></div>
+          </div>
+        </div>
+      </div>
+      <!-- EN DESARROLLO -->
+      <div class="k-col col-ed">
+        <div class="k-col-hdr">EN DESARROLLO <div class="k-cnt">1</div></div>
+        <div class="k-col-body">
+          <div class="k-card">
+            <div class="k-card-top"><span class="k-id">TSK-108</span><span class="k-badge">Media</span></div>
+            <div class="k-card-title">Deploy ambiente de staging</div>
+            <div class="k-card-footer"><div class="av av-cm">CM</div></div>
+          </div>
+        </div>
+      </div>
+      <!-- FINALIZADA -->
+      <div class="k-col col-fn">
+        <div class="k-col-hdr">FINALIZADA <div class="k-cnt">7</div></div>
+        <div class="k-col-body">
+          <div class="k-card">
+            <div class="k-card-top"><span class="k-id">TSK-101</span><span class="k-badge">Media</span></div>
+            <div class="k-card-title">Migrar base de datos a PostgreSQL</div>
+            <div class="k-card-footer"><div class="av av-cm">CM</div></div>
+          </div>
+          <div class="k-card">
+            <div class="k-card-top"><span class="k-id">TSK-102</span><span class="k-badge">Media</span></div>
+            <div class="k-card-title">Refactoring módulo autenticación</div>
+            <div class="k-card-footer"><div class="av av-at">AT</div></div>
+          </div>
+          <div class="k-card">
+            <div class="k-card-top"><span class="k-id">TSK-103</span><span class="k-badge alta">Alta</span></div>
+            <div class="k-card-title">API Gateway — endpoints públicos</div>
+            <div class="k-card-footer"><div class="av av-sv">SV</div></div>
+          </div>
+          <div class="k-card">
+            <div class="k-card-top"><span class="k-id">TSK-104</span><span class="k-badge">Media</span></div>
+            <div class="k-card-title">Configurar pipeline CI/CD</div>
+            <div class="k-card-footer"><div class="av av-dr">DR</div></div>
+          </div>
+          <div class="k-card">
+            <div class="k-card-top"><span class="k-id">TSK-105</span><span class="k-badge">Media</span></div>
+            <div class="k-card-title">Implementar caché con Redis</div>
+            <div class="k-card-footer"><div class="av av-at">AT</div></div>
+          </div>
+          <div class="k-card">
+            <div class="k-card-top"><span class="k-id">TSK-106</span><span class="k-badge baja">Baja</span></div>
+            <div class="k-card-title">Integración servicio de emails</div>
+            <div class="k-card-footer"><div class="av av-sv">SV</div></div>
+          </div>
+          <div class="k-card">
+            <div class="k-card-top"><span class="k-id">TSK-107</span><span class="k-badge">Media</span></div>
+            <div class="k-card-title">Optimización índices base de datos</div>
+            <div class="k-card-footer"><div class="av av-dr">DR</div></div>
+          </div>
+        </div>
+      </div>
+      <!-- BLOQUEADA -->
+      <div class="k-col col-bl">
+        <div class="k-col-hdr">BLOQUEADA <div class="k-cnt">1</div></div>
+        <div class="k-col-body">
+          <div class="k-card">
+            <div class="k-card-top"><span class="k-id">TSK-110</span><span class="k-badge alta">Media</span></div>
+            <div class="k-card-title">Rollback plan y documentación</div>
+            <div class="k-card-footer"><div class="av av-dr">DR</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ GANTT VIEW ══ -->
+  <div class="view gantt-view active" id="view-gantt">
+    <div class="gantt-main">
+      <div class="g-legend">
+        <div class="leg"><div class="leg-dot ld-fn"></div>Finalizada</div>
+        <div class="leg"><div class="leg-dot ld-ed"></div>En desarrollo</div>
+        <div class="leg"><div class="leg-dot ld-bl"></div>Bloqueada</div>
+        <div class="leg"><div class="leg-dot ld-ni"></div>No iniciada</div>
+        <div class="leg"><div class="leg-dot ld-ot"></div>Otro</div>
+        <div class="leg"><div class="leg-dot ld-hito"></div>Hito</div>
+      </div>
+      <div class="gantt-body">
+        <div class="g-task-list" id="g-task-list">
+          <div class="g-proj-hdr"><div class="g-proj-dot"></div>RELEASE - SPRINT 3</div>
+        </div>
+        <div class="g-timeline" id="g-timeline"></div>
+      </div>
+    </div>
+    <!-- Right panel -->
+    <div class="g-panel">
+      <div class="p-hdr"><div class="p-online"></div>PANEL DE CONTROL</div>
+      <div style="padding:10px 14px 4px">
+        <button class="p-filtros-btn">🔍 Filtros</button>
+      </div>
+      <div class="p-sec">
+        <div class="p-sec-title">🔍 BUSCAR</div>
+        <input class="p-input" placeholder="Nombre de tarea..."/>
+      </div>
+      <div class="p-sec">
+        <div class="p-sec-title">📁 PROYECTO</div>
+        <select class="p-select"><option>RELEASE - SPRINT 3</option></select>
+      </div>
+      <div class="p-sec">
+        <div class="p-sec-title">🌐 ESTADO</div>
+        <select class="p-select" id="filter-estado" onchange="applyFilter()">
+          <option value="">Todos los estados</option>
+          <option value="fn">Finalizada</option>
+          <option value="ed">En desarrollo</option>
+          <option value="ni">No iniciada</option>
+          <option value="bl">Bloqueada</option>
+        </select>
+      </div>
+      <div class="p-sec">
+        <div class="p-sec-title">🚀 SPRINT</div>
+        <select class="p-select"><option>Todos los sprints</option><option>Sprint 1</option><option>Sprint 2</option><option>Sprint 3</option></select>
+      </div>
+      <div class="p-sec">
+        <div class="p-sec-title">⚡ PRIORIDAD</div>
+        <select class="p-select"><option>Todas las prioridades</option><option>Alta</option><option>Media</option><option>Baja</option></select>
+      </div>
+      <div class="p-sec">
+        <div class="p-sec-title">👤 RESPONSABLE</div>
+        <select class="p-select" id="filter-resp" onchange="applyFilter()">
+          <option value="">Todos los responsables</option>
+          <option value="AT">Ana Torres</option>
+          <option value="CM">Carlos Mendez</option>
+          <option value="SV">Sofia Vargas</option>
+          <option value="DR">Diego Ramirez</option>
+        </select>
+      </div>
+      <button class="p-btn-clear" onclick="clearFilters()">✕ Limpiar filtros</button>
+      <div class="p-shortcuts">
+        <div class="p-sec-title" style="margin-bottom:8px">ATAJOS DE TECLADO</div>
+        <div class="p-shortcut"><span>← →</span><span class="p-key">Navegar timeline</span></div>
+        <div class="p-shortcut"><span>Hoy</span><span class="p-key">Botón volver al hoy</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+// ── DATA ────────────────────────────────────────────
+const TASKS = [
+  {id:'TSK-101',name:'Migrar base de datos a PostgreSQL',status:'fn',start:0, len:11,resp:'CM'},
+  {id:'TSK-102',name:'Refactoring módulo autenticación',  status:'fn',start:1, len:10,resp:'AT'},
+  {id:'TSK-103',name:'API Gateway — endpoints públicos',  status:'fn',start:2, len:9, resp:'SV'},
+  {id:'TSK-104',name:'Configurar pipeline CI/CD',         status:'fn',start:4, len:8, resp:'DR'},
+  {id:'TSK-105',name:'Implementar caché con Redis',       status:'fn',start:1, len:11,resp:'AT'},
+  {id:'TSK-106',name:'Integración servicio de emails',    status:'fn',start:3, len:9, resp:'SV'},
+  {id:'TSK-107',name:'Optimización índices base de datos',status:'fn',start:5, len:8, resp:'DR'},
+  {id:'TSK-108',name:'Deploy ambiente de staging',        status:'ed',start:8, len:18,resp:'CM',timer:true},
+  {id:'TSK-109',name:'Pruebas de carga y performance',    status:'ni',start:55,len:12,resp:'AT'},
+  {id:'TSK-110',name:'Rollback plan y documentación',     status:'bl',start:70,len:10,resp:'DR'},
+];
+
+const DAY_W = 9;   // px per day
+const DAYS  = 185; // ~6 months from Jul 1
+const TODAY = 13;  // Jul 14 = day 13 (0-indexed)
+
+const MONTHS = [
+  {label:'Jul 2026',days:31},{label:'Ago 2026',days:31},{label:'Sep 2026',days:30},
+  {label:'Oct 2026',days:31},{label:'Nov 2026',days:30},{label:'Dic 2026',days:31},
+  {label:'Ene 2027',days:31},
+];
+
+// ── BUILD GANTT ──────────────────────────────────────
+function buildGantt() {
+  const taskList = document.getElementById('g-task-list');
+  const timeline = document.getElementById('g-timeline');
+  timeline.innerHTML = '';
+
+  // Month header
+  const mhdr = document.createElement('div');
+  mhdr.className = 'g-months-hdr';
+  let daysAcc = 0;
+  MONTHS.forEach(m => {
+    const w = m.days * DAY_W;
+    const el = document.createElement('div');
+    el.className = 'g-month';
+    el.style.cssText = `width:${w}px;min-width:${w}px`;
+    el.textContent = m.label;
+    mhdr.appendChild(el);
+    daysAcc += m.days;
+  });
+  timeline.appendChild(mhdr);
+
+  // Rows wrapper
+  const wrap = document.createElement('div');
+  wrap.className = 'g-rows-wrap';
+  wrap.style.cssText = `width:${DAYS * DAY_W}px;overflow:hidden;position:relative`;
+
+  // Today line
+  const todayLine = document.createElement('div');
+  todayLine.className = 'today-line';
+  todayLine.style.left = (TODAY * DAY_W) + 'px';
+  wrap.appendChild(todayLine);
+
+  renderGanttRows(taskList, wrap);
+  timeline.appendChild(wrap);
+}
+
+function renderGanttRows(taskList, wrap) {
+  // Clear existing task rows (keep project header)
+  const existingRows = taskList.querySelectorAll('.g-row');
+  existingRows.forEach(r => r.remove());
+  wrap.querySelectorAll('.g-trow').forEach(r => r.remove());
+
+  const filterEstado = document.getElementById('filter-estado')?.value || '';
+  const filterResp   = document.getElementById('filter-resp')?.value   || '';
+
+  TASKS.forEach(t => {
+    if (filterEstado && t.status !== filterEstado) return;
+    if (filterResp   && t.resp   !== filterResp)   return;
+
+    // Task list row
+    const listRow = document.createElement('div');
+    listRow.className = 'g-row';
+    listRow.innerHTML = `<span class="g-tid">${t.id}</span><span class="g-tname">${t.name}</span>${t.timer ? '<span class="g-timer">⏰</span>' : ''}`;
+    taskList.appendChild(listRow);
+
+    // Timeline row
+    const trow = document.createElement('div');
+    trow.className = 'g-trow';
+    trow.style.cssText = `width:${DAYS * DAY_W}px`;
+    const bar = document.createElement('div');
+    bar.className = `g-bar bar-${t.status}`;
+    bar.style.cssText = `left:${t.start * DAY_W}px;width:${t.len * DAY_W}px`;
+    bar.title = `${t.id}: ${t.name}`;
+    trow.appendChild(bar);
+    wrap.appendChild(trow);
+  });
+}
+
+// ── INTERACTIONS ─────────────────────────────────────
+function switchView(v) {
+  ['kanban','gantt'].forEach(name => {
+    document.getElementById('view-' + name).classList.toggle('active', name === v);
+    document.getElementById('btn-' + name).classList.toggle('active', name === v);
+  });
+  document.getElementById('range-btns').style.display = v === 'gantt' ? 'flex' : 'none';
+}
+
+function nav(el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function setShow(el) {
+  document.querySelectorAll('.k-show-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function setRange(el) {
+  document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function applyFilter() {
+  const taskList = document.getElementById('g-task-list');
+  const wrap = document.querySelector('.g-rows-wrap');
+  if (wrap) renderGanttRows(taskList, wrap);
+}
+
+function clearFilters() {
+  document.getElementById('filter-estado').value = '';
+  document.getElementById('filter-resp').value = '';
+  applyFilter();
+}
+
+// ── KEYBOARD NAV (Gantt) ─────────────────────────────
+document.addEventListener('keydown', e => {
+  const tl = document.getElementById('g-timeline');
+  if (!tl || !document.getElementById('view-gantt').classList.contains('active')) return;
+  if (e.key === 'ArrowRight') tl.scrollLeft += 80;
+  if (e.key === 'ArrowLeft')  tl.scrollLeft -= 80;
+});
+
+// ── INIT ─────────────────────────────────────────────
+buildGantt();
+</script>
+</body>
+</html>

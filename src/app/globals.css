@@ -1,26 +1,112 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* Use class-based dark mode so next-themes (.dark on <html>) controls it */
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ── Light mode (default) ───────────────────────────────────────────────── */
+:root {
+  --page-bg:        #f9fafb;
+  --page-fg:        #111827;
+  --page-muted:     #4b5563;
+  --page-gradient:  radial-gradient(ellipse 80% 80% at 50% -20%, rgba(251,191,36,0.14), rgba(255,255,255,0.9));
+  --nav-bg:         rgba(255,255,255,0.85);
+  --nav-border:     rgba(0,0,0,0.08);
+  color-scheme: light;
+}
+
+/* ── Dark mode ──────────────────────────────────────────────────────────── */
+.dark {
+  --page-bg:        rgb(3, 7, 18);
+  --page-fg:        #ffffff;
+  --page-muted:     #9ca3af;
+  --page-gradient:  radial-gradient(ellipse 80% 80% at 50% -20%, rgba(251,191,36,0.14), rgba(0,0,0,0));
+  --nav-bg:         rgba(17,24,39,0.80);
+  --nav-border:     rgba(255,255,255,0.1);
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--page-bg);
+  color: var(--page-fg);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ── Animations ─────────────────────────────────────────────────────────── */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin-conic {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes ping-dot {
+  75%, 100% { transform: scale(2.5); opacity: 0; }
+}
+
+.anim-fade-in {
+  opacity: 0;
+  animation: fade-in-up 0.6s ease-out forwards;
+}
+.anim-delay-1 { animation-delay: 150ms; }
+.anim-delay-2 { animation-delay: 300ms; }
+.anim-delay-3 { animation-delay: 450ms; }
+
+.animate-spin-conic {
+  animation: spin-conic 2s linear infinite;
+}
+
+.animate-ping-dot {
+  animation: ping-dot 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.project-article.in-view .proj-reveal-overlay {
+  opacity: 0;
+}
+
+.project-article.in-view .proj-reveal-img {
+  transform: scale(1.05);
+}
+
+/* ── Gradient name ──────────────────────────────────────────────────────── */
+.gradient-name {
+  background: linear-gradient(135deg, #facc15 0%, #fbbf24 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Section heading underline ──────────────────────────────────────────── */
+.section-underline {
+  margin-top: 0.75rem;
+  height: 1px;
+  width: 5rem;
+  background: linear-gradient(to right, rgba(250, 204, 21, 0.7), transparent);
+}
+
+/* ── Scrollbar ──────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #111827; }
+::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #374151; }
+
+/* ── Selection ──────────────────────────────────────────────────────────── */
+::selection {
+  background-color: rgba(250, 204, 21, 0.3);
+  color: #fff;
 }

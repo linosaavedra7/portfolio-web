@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Flights Publication System — Schedule Publication</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sidebar-bg: #16192a;
+    --sidebar-hover: rgba(255,255,255,0.06);
+    --sidebar-active-bg: rgba(255,255,255,0.10);
+    --sidebar-text: #9da3b8;
+    --sidebar-text-active: #ffffff;
+    --sidebar-border: rgba(255,255,255,0.07);
+    --sidebar-width: 215px;
+    --main-bg: #f3f2f6;
+    --content-bg: #ffffff;
+    --border-color: #e8e8e8;
+    --tab-active-color: #141414;
+    --tab-inactive-color: #8c8c8c;
+    --tab-underline: #e61740;
+    --btn-primary-bg: #141c35;
+    --cell-new: #d9f7be;
+    --cell-cnl: #ffccc7;
+    --cell-both: #ffffb8;
+    --col-header: #fafafa;
+    --text-primary: #141414;
+    --text-secondary: #595959;
+    --success: #52c41a;
+    --danger: #ff4d4f;
+    --font: 'Trebuchet MS', Tahoma, system-ui, sans-serif;
+    --font-mono: 'Menlo', 'Monaco', 'Courier New', monospace;
+  }
+
+  html, body { height: 100%; font-family: var(--font); background: var(--main-bg); color: var(--text-primary); font-size: 13px; overflow: hidden; }
+  .app { display: flex; height: 100vh; overflow: hidden; }
+
+  /* ── SIDEBAR ── */
+  .sidebar { width: var(--sidebar-width); min-width: var(--sidebar-width); background: var(--sidebar-bg); display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+  .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 16px; border-bottom: 1px solid var(--sidebar-border); }
+  .logo-text { display: flex; flex-direction: column; line-height: 1.15; }
+  .logo-text-top { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; color: #fff; text-transform: uppercase; }
+  .logo-text-bottom { font-size: 9px; font-weight: 600; letter-spacing: 0.1em; color: var(--sidebar-text); text-transform: uppercase; }
+  .sidebar-nav { flex: 1; overflow-y: auto; padding: 6px 0; }
+  .sidebar-nav::-webkit-scrollbar { width: 3px; }
+  .sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 16px; cursor: pointer; transition: background 0.15s; color: var(--sidebar-text); font-size: 12.5px; user-select: none; }
+  .nav-item:hover { background: var(--sidebar-hover); color: #d8dae8; }
+  .nav-item.active { background: var(--sidebar-active-bg); color: var(--sidebar-text-active); font-weight: 500; }
+  .nav-item.disabled { opacity: 0.35; cursor: default; pointer-events: none; }
+  .nav-icon { width: 15px; height: 15px; flex-shrink: 0; opacity: 0.8; }
+  .nav-item.active .nav-icon { opacity: 1; }
+  .sidebar-footer { border-top: 1px solid var(--sidebar-border); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; }
+  .sidebar-user { display: flex; align-items: center; gap: 10px; }
+  .user-avatar { width: 26px; height: 26px; border-radius: 50%; background: #2a4fa0; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; }
+  .user-name { font-size: 12.5px; color: #fff; font-weight: 500; }
+  .sidebar-collapse { color: var(--sidebar-text); font-size: 11px; cursor: pointer; }
+
+  /* ── MAIN ── */
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: var(--main-bg); }
+
+  /* ── TABS BAR ── */
+  .tabs-bar { background: #fff; border-bottom: 1px solid var(--border-color); display: flex; align-items: flex-end; justify-content: space-between; padding: 0 20px; flex-shrink: 0; }
+  .tabs-list { display: flex; align-items: flex-end; }
+  .tab { padding: 10px 14px 9px; font-size: 13px; color: var(--tab-inactive-color); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; margin-bottom: -1px; }
+  .tab:hover { color: var(--tab-active-color); }
+  .tab.active { color: var(--tab-active-color); font-weight: 500; border-bottom-color: var(--tab-underline); }
+  .tab-more { padding: 10px 8px 9px; color: var(--tab-inactive-color); cursor: pointer; font-size: 15px; margin-bottom: -1px; }
+  .tabs-actions { display: flex; align-items: center; gap: 7px; padding-bottom: 7px; }
+  .btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; font-size: 12px; font-family: var(--font); border-radius: 6px; cursor: pointer; border: 1px solid transparent; font-weight: 500; white-space: nowrap; line-height: 1.4; }
+  .btn-outline { background: #fff; border-color: #d1d5db; color: #1f2937; }
+  .btn-outline:hover { background: #f5f5f5; }
+  .btn-primary { background: var(--btn-primary-bg); color: #fff; border-color: var(--btn-primary-bg); }
+  .btn-icon { width: 12px; height: 12px; flex-shrink: 0; }
+
+  /* ── CONTENT ── */
+  .content-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding: 14px 20px 0; }
+  .pub-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-size: 12px; color: var(--text-secondary); flex-shrink: 0; flex-wrap: wrap; gap: 6px; }
+  .pub-name-group { display: flex; align-items: center; gap: 7px; }
+  .pub-dropdown { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border: 1.5px dashed #1890ff; border-radius: 5px; color: var(--text-primary); font-size: 12.5px; font-weight: 500; cursor: pointer; background: transparent; font-family: var(--font); transition: background 0.12s; }
+  .pub-dropdown:hover { background: #e6f4ff; }
+  .pub-meta-group { display: flex; align-items: center; gap: 18px; }
+  .pub-meta-item { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .pub-meta-value { font-size: 12.5px; font-weight: 600; color: var(--text-primary); }
+
+  /* ── TABLE ── */
+  .table-wrapper { flex: 1; overflow: auto; border: 1px solid var(--border-color); border-radius: 7px; background: #fff; margin-bottom: 14px; }
+  .table-wrapper::-webkit-scrollbar { height: 5px; width: 5px; }
+  .table-wrapper::-webkit-scrollbar-thumb { background: #d0d0d0; border-radius: 3px; }
+  .data-table { width: max-content; min-width: 100%; border-collapse: collapse; font-family: var(--font); font-variant-numeric: tabular-nums; }
+  .data-table th { background: var(--col-header); font-size: 10px; font-weight: 600; color: var(--text-secondary); text-align: center; padding: 7px 5px; border-bottom: 1px solid #d9d9d9; border-right: 1px solid #e8e8e8; white-space: nowrap; position: sticky; top: 0; z-index: 2; }
+  .data-table th:first-child, .data-table th:nth-child(2), .data-table th:last-child { z-index: 4; }
+  .data-table td { border-bottom: 1px solid #e8e8e8; border-right: 1px solid #e8e8e8; height: 65px; vertical-align: middle; text-align: center; padding: 0; cursor: pointer; }
+  .col-country { width: 130px; min-width: 130px; position: sticky; left: 0; z-index: 1; }
+  .col-flights { width: 80px; min-width: 80px; position: sticky; left: 130px; z-index: 1; }
+  .col-period  { width: 148px; min-width: 148px; }
+  .col-total   { width: 165px; min-width: 165px; position: sticky; right: 0; z-index: 1; }
+  .col-country-h { left: 0; position: sticky; z-index: 5 !important; }
+  .col-flights-h { left: 130px; position: sticky; z-index: 5 !important; }
+  .col-total-h   { right: 0; position: sticky; z-index: 5 !important; }
+  .cell-country { font-size: 13px; font-weight: 700; color: var(--text-primary); padding: 6px; height: 65px; display: flex; align-items: center; justify-content: center; background: #f5f5f7; }
+  .cell-flights { font-size: 13px; font-weight: 700; padding: 6px; height: 65px; display: flex; align-items: center; justify-content: center; background: #f5f5f7; }
+  .cell-flights.pos { color: var(--success); }
+  .cell-flights.neg { color: var(--danger); }
+  .cell-data { height: 65px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 4px; font-size: 9px; }
+  .cell-data.empty { background: #fff; }
+  .cell-data.new-only { background: var(--cell-new); }
+  .cell-data.cnl-only { background: var(--cell-cnl); }
+  .cell-data.both     { background: var(--cell-both); }
+  .action-row { display: flex; flex-wrap: wrap; gap: 2px; align-items: center; justify-content: center; }
+  .action-entry { white-space: nowrap; font-size: 9px; color: #333; font-family: var(--font-mono); font-weight: 500; line-height: 1.4; }
+  .cell-total { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; height: 65px; padding: 4px; background: #f5f5f7; font-size: 10px; font-weight: 600; }
+  .total-new { color: var(--success); }
+  .total-cnl { color: var(--danger); }
+  .data-table tbody tr:hover td { background: #e8f4ff !important; }
+  .data-table tbody tr:hover .cell-country,
+  .data-table tbody tr:hover .cell-flights,
+  .data-table tbody tr:hover .cell-total { background: #cce4ff !important; }
+  .data-table tbody tr:hover .cell-data { background: #cce4ff !important; }
+
+  /* ── MODAL ── */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; display: none; align-items: center; justify-content: center; padding: 24px; }
+  .modal-overlay.open { display: flex; }
+  .modal-card { background: #fff; border-radius: 10px; box-shadow: 0 20px 60px rgba(0,0,0,0.25); width: 100%; max-width: 1280px; max-height: 88vh; display: flex; flex-direction: column; overflow: hidden; }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px 14px; border-bottom: 1px solid #f0f0f0; flex-shrink: 0; }
+  .modal-title { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+  .modal-close { width: 30px; height: 30px; border-radius: 6px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #555; transition: background 0.12s; }
+  .modal-close:hover { background: #f5f5f5; }
+  .modal-stats { display: flex; align-items: center; justify-content: space-between; padding: 12px 22px; background: #fafafa; border-bottom: 1px solid #f0f0f0; flex-shrink: 0; flex-wrap: wrap; gap: 12px; }
+  .stats-left { display: flex; align-items: center; gap: 28px; }
+  .stat-item { display: flex; flex-direction: column; gap: 1px; }
+  .stat-label { font-size: 10.5px; color: #8c8c8c; font-weight: 400; }
+  .stat-value { font-size: 16px; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+  .stat-value.pos { color: var(--success); }
+  .stats-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px 3px 6px; border-radius: 4px; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .badge-label { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px; letter-spacing: 0.03em; }
+  .badge-nf { background: #f6ffed; color: #135200; }
+  .badge-nf .badge-label { background: #52c41a; color: #fff; }
+  .badge-cf { background: #fff1f0; color: #a8071a; }
+  .badge-cf .badge-label { background: #ff4d4f; color: #fff; }
+  .btn-export { background: #2d5016; color: #fff; border: none; border-radius: 5px; padding: 5px 14px; font-size: 12px; font-family: var(--font); font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .btn-export:hover { background: #3a6b1c; }
+  .modal-filter-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 22px; border-bottom: 1px solid #f0f0f0; flex-shrink: 0; }
+  .filter-group { display: flex; align-items: center; gap: 10px; }
+  .filter-label { font-size: 12px; color: var(--text-secondary); font-weight: 500; white-space: nowrap; }
+  .filter-input { padding: 4px 10px; border: 1px solid #d1d5db; border-radius: 5px; font-size: 12px; font-family: var(--font); color: #555; width: 170px; outline: none; }
+  .filter-input:focus { border-color: #1890ff; }
+  .pagination { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-secondary); }
+  .page-btn { width: 24px; height: 24px; border: 1px solid #d1d5db; border-radius: 4px; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #555; }
+  .page-btn:hover { background: #f5f5f5; }
+  .page-btn.disabled { opacity: 0.4; pointer-events: none; }
+  .modal-table-wrapper { flex: 1; overflow: auto; }
+  .modal-table-wrapper::-webkit-scrollbar { height: 5px; width: 5px; }
+  .modal-table-wrapper::-webkit-scrollbar-thumb { background: #d0d0d0; border-radius: 3px; }
+  .modal-table { width: max-content; min-width: 100%; border-collapse: collapse; font-family: var(--font); font-variant-numeric: tabular-nums; }
+  .modal-table th { background: #fafafa; font-size: 10px; font-weight: 600; color: var(--text-secondary); text-align: center; padding: 7px 8px; border-bottom: 1px solid #d9d9d9; border-right: 1px solid #e8e8e8; white-space: nowrap; position: sticky; top: 0; z-index: 2; }
+  .modal-table td { border-bottom: 1px solid #e8e8e8; border-right: 1px solid #e8e8e8; height: 72px; vertical-align: middle; text-align: center; padding: 0; }
+  .mcol-route  { width: 100px; min-width: 100px; text-align: left !important; position: sticky; left: 0; z-index: 1; background: #fafafa; }
+  .mcol-ask    { width: 72px; min-width: 72px; position: sticky; left: 100px; z-index: 1; background: #fafafa; }
+  .mcol-flt    { width: 80px; min-width: 80px; position: sticky; left: 172px; z-index: 1; background: #fafafa; }
+  .mcol-total  { width: 140px; min-width: 140px; position: sticky; left: 252px; z-index: 1; background: #fafafa; }
+  .mcol-period { width: 142px; min-width: 142px; }
+  .mcol-route-h  { left: 0;   position: sticky; z-index: 5 !important; }
+  .mcol-ask-h    { left: 100px; position: sticky; z-index: 5 !important; }
+  .mcol-flt-h    { left: 172px; position: sticky; z-index: 5 !important; }
+  .mcol-total-h  { left: 252px; position: sticky; z-index: 5 !important; }
+  .mcell-route { font-size: 12px; font-weight: 700; padding: 0 10px; height: 72px; display: flex; align-items: center; background: #fafafa; }
+  .mcell-pct { font-size: 12px; font-weight: 700; height: 72px; display: flex; align-items: center; justify-content: center; background: #fafafa; }
+  .mcell-pct.pos { color: var(--success); }
+  .mcell-pct.neg { color: var(--danger); }
+  .mcell-total { font-size: 10px; font-weight: 600; height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 4px; background: #fafafa; }
+  .mcell-data  { font-size: 9px; height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 4px; }
+  .mcell-data.empty    { background: #fff; }
+  .mcell-data.new-only { background: var(--cell-new); }
+  .mcell-data.cnl-only { background: var(--cell-cnl); }
+  .mcell-data.both     { background: var(--cell-both); }
+  .maction-entry { white-space: nowrap; font-size: 9px; color: #333; font-family: var(--font-mono); font-weight: 500; line-height: 1.4; }
+  .maction-row { display: flex; flex-wrap: wrap; gap: 2px; align-items: center; justify-content: center; }
+  .mtotal-nf { color: var(--success); }
+  .mtotal-cf { color: var(--danger); }
+  .modal-table tbody tr:nth-child(even) td:not(.mcol-route):not(.mcol-ask):not(.mcol-flt):not(.mcol-total) { background: inherit; }
+
+  /* ── DEMO BADGE ── */
+  .demo-badge { position: fixed; bottom: 12px; right: 12px; background: rgba(22,25,42,0.88); backdrop-filter: blur(6px); color: #9da3b8; font-size: 10.5px; padding: 5px 11px; border-radius: 18px; border: 1px solid rgba(255,255,255,0.12); pointer-events: none; z-index: 999; }
+  .demo-badge strong { color: #fff; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
+        <path d="M4 22 L10 10 L16 18 L22 6 L28 14" stroke="#e61740" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="4" cy="22" r="2.2" fill="#e61740"/><circle cx="10" cy="10" r="2.2" fill="#e61740"/>
+        <circle cx="16" cy="18" r="2.2" fill="#e61740"/><circle cx="22" cy="6" r="2.2" fill="#e61740"/>
+        <circle cx="28" cy="14" r="2.2" fill="#e61740"/>
+      </svg>
+      <div class="logo-text"><span class="logo-text-top">Flights</span><span class="logo-text-bottom">Publication System</span></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item"><svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8z"/><path d="M8 4.5a.5.5 0 0 1 .5.5v3.793l2.146 2.147a.5.5 0 0 1-.708.707L7.5 9.207V5a.5.5 0 0 1 .5-.5z"/></svg>Flight Events</div>
+      <div class="nav-item active"><svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M14 1H2a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zm-1 2H3V3h10v.5zM2 7h4v1H2zm0 3h4v1H2zm0 3h4v1H2zm5-6h7v1H7zm0 3h7v1H7zm0 3h7v1H7z"/></svg>Schedule Traceability</div>
+      <div class="nav-item"><svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M1 11a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1zm5-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1zm5-5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1z"/></svg>Flight Analytics</div>
+      <div class="nav-item"><svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M3 2a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1zm2 0v12h6V2z"/><path d="M5 4h6v1H5zm0 2h6v1H5zm0 2h4v1H5z"/></svg>Route Pointers</div>
+      <div class="nav-item"><svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M6 1a5 5 0 1 0 0 10A5 5 0 0 0 6 1zM1 6a5 5 0 1 1 10 0A5 5 0 0 1 1 6z"/><path d="M6 3.5a.5.5 0 0 1 .5.5v2.793l1.146 1.147a.5.5 0 0 1-.707.707l-1.5-1.5A.5.5 0 0 1 5.5 7V4a.5.5 0 0 1 .5-.5zm4.5 7a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1H11a.5.5 0 0 1-.5-.5z"/></svg>Capacity Planner</div>
+      <div class="nav-item"><svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v4h6V1zm7 0v5h6V2a1 1 0 0 0-1-1zm6 6H9v6h4a1 1 0 0 0 1-1zm-7 6V7H1v5a1 1 0 0 0 1 1z"/></svg>Performance Board</div>
+      <div class="nav-item"><svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8z"/><path d="M8 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM4 8a4 4 0 1 1 8 0 4 4 0 0 1-8 0z"/><circle cx="8" cy="8" r="1.5"/></svg>Flight Goals</div>
+      <div class="nav-item"><svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1H0zm0 3v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7zm3 2h1a1 1 0 0 1 0 2H3a1 1 0 0 1 0-2z"/></svg>Market Offer</div>
+      <div class="nav-item"><svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 4C5.8 4 4 5.8 4 8s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4zm0 7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/><path d="M8 1v2m0 10v2M1 8h2m10 0h2M3.2 3.2l1.4 1.4m6.8 6.8 1.4 1.4M3.2 12.8l1.4-1.4m6.8-6.8 1.4-1.4" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>Route Analyzer</div>
+      <div class="nav-item"><svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/><path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm0 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1z"/></svg>Help Center</div>
+      <div class="nav-item disabled"><svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/></svg>Admin Panel</div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user"><div class="user-avatar">LS</div><span class="user-name">Lino</span></div>
+      <span class="sidebar-collapse">&#171;&#171;</span>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <main class="main">
+    <div class="tabs-bar">
+      <div class="tabs-list">
+        <div class="tab">Domestic Operations</div>
+        <div class="tab active">Schedule Publication</div>
+        <div class="tab">Commercial Distribution*</div>
+        <div class="tab">Live Distribution</div>
+        <div class="tab-more">&#8943;</div>
+      </div>
+      <div class="tabs-actions">
+        <button class="btn btn-outline"><svg class="btn-icon" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>Refresh</button>
+        <button class="btn btn-primary"><svg class="btn-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2.5 7h5a.5.5 0 0 0 0-1h-5a.5.5 0 0 0 0 1zm5.5-4a.5.5 0 1 0-1 0 .5.5 0 0 0 1 0zm1.5 0a.5.5 0 1 0-1 0 .5.5 0 0 0 1 0zm1.5 0a.5.5 0 1 0-1 0 .5.5 0 0 0 1 0zm1.5 0a.5.5 0 1 0-1 0 .5.5 0 0 0 1 0z"/></svg>Save Data</button>
+        <button class="btn btn-outline">Compare Post Dynamic</button>
+        <button class="btn btn-outline"><svg class="btn-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8z"/><path d="M8 4.5a.5.5 0 0 1 .5.5v3.793l2.146 2.147a.5.5 0 0 1-.708.707L7.5 9.207V5a.5.5 0 0 1 .5-.5z"/></svg>SSIM Files</button>
+      </div>
+    </div>
+
+    <div class="content-area">
+      <div class="pub-header">
+        <div class="pub-name-group">
+          <span>Publication name:</span>
+          <button class="pub-dropdown">DYN 2026-07-11 (Historical)<svg width="9" height="9" viewBox="0 0 16 16" fill="currentColor" style="margin-left:2px"><path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/></svg></button>
+        </div>
+        <div class="pub-meta-group">
+          <div class="pub-meta-item"><span>Publication responsible:</span><span class="pub-meta-value">usuario@latam.com</span></div>
+          <div class="pub-meta-item"><span>Last update:</span><span class="pub-meta-value">10/07/2026 18:12:43</span></div>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="data-table" id="mainTable">
+          <thead>
+            <tr>
+              <th class="col-country col-country-h">Country/Months</th>
+              <th class="col-flights col-flights-h">%Flights</th>
+              <th class="col-period">2026-09</th>
+              <th class="col-period">2026-10</th>
+              <th class="col-period">2026-11</th>
+              <th class="col-period">2026-12</th>
+              <th class="col-period">2027-01</th>
+              <th class="col-period">2027-02</th>
+              <th class="col-total col-total-h">Total</th>
+            </tr>
+          </thead>
+          <tbody id="mainTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ── MODAL ── -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle">Schedule Publication - Peru</span>
+      <button class="modal-close" onclick="closeModalBtn()">&#x2715;</button>
+    </div>
+    <div class="modal-stats" id="modalStats"></div>
+    <div class="modal-filter-row">
+      <div class="filter-group">
+        <span class="filter-label">Route Filter</span>
+        <input class="filter-input" placeholder="Filter by Route" oninput="filterRoutes(this.value)" />
+      </div>
+      <div class="pagination">
+        <span id="pageInfo" style="margin-right:8px;font-size:12px;color:#595959">Page 1 of 1</span>
+        <button class="page-btn disabled">&#171;&#171;</button>
+        <button class="page-btn disabled">&#8249;</button>
+        <button class="page-btn disabled">&#8250;</button>
+        <button class="page-btn disabled">&#187;&#187;</button>
+      </div>
+    </div>
+    <div class="modal-table-wrapper">
+      <table class="modal-table" id="modalTable">
+        <thead>
+          <tr>
+            <th class="mcol-route mcol-route-h">Route</th>
+            <th class="mcol-ask mcol-ask-h">% ASK</th>
+            <th class="mcol-flt mcol-flt-h">% Flights</th>
+            <th class="mcol-total mcol-total-h">TOTAL</th>
+            <th class="mcol-period">2026-09</th>
+            <th class="mcol-period">2026-10</th>
+            <th class="mcol-period">2026-11</th>
+            <th class="mcol-period">2026-12</th>
+            <th class="mcol-period">2027-01</th>
+            <th class="mcol-period">2027-02</th>
+          </tr>
+        </thead>
+        <tbody id="modalTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="demo-badge">Demo visual — <strong>LATAM Flights Publication System</strong></div>
+
+<script>
+const PERIODS = ['2026-09','2026-10','2026-11','2026-12','2027-01','2027-02'];
+
+// ── MAIN TABLE DATA ──────────────────────────────────────
+const ROWS = [
+  {
+    country: 'Peru', pct: '+0.5%',
+    cells: {
+      '2026-12': [{t:'NF',n:1}],
+      '2027-01': [{t:'NF',n:95}],
+      '2027-02': [{t:'NF',n:92}]
+    },
+    total: [{t:'NF',n:509}]
+  },
+  {
+    country: 'Chile', pct: '+27.6%',
+    cells: {
+      '2026-09': [{t:'NF',n:77},{t:'CF',n:77}],
+      '2026-10': [{t:'NF',n:292},{t:'CF',n:290}],
+      '2026-11': [{t:'NF',n:87},{t:'CF',n:87}],
+      '2026-12': [{t:'NF',n:119},{t:'CF',n:97}],
+      '2027-01': [{t:'NF',n:3877},{t:'CF',n:79}],
+      '2027-02': [{t:'NF',n:4407},{t:'CF',n:128}]
+    },
+    total: [{t:'NF',n:17648},{t:'CF',n:757}]
+  },
+  {
+    country: 'Ecuador', pct: '+0.7%',
+    cells: {},
+    total: [{t:'NF',n:126}]
+  },
+  {
+    country: 'Brazil', pct: '+24.2%',
+    cells: {
+      '2026-09': [{t:'CF',n:1}],
+      '2027-01': [{t:'NF',n:125}],
+      '2027-02': [{t:'NF',n:166}]
+    },
+    total: [{t:'NF',n:1226},{t:'CF',n:1}]
+  },
+  {
+    country: 'Colombia', pct: '+12.3%',
+    cells: {
+      '2026-10': [{t:'NF',n:45},{t:'CF',n:32}],
+      '2026-11': [{t:'NF',n:63}],
+      '2026-12': [{t:'NF',n:88},{t:'CF',n:12}],
+      '2027-01': [{t:'NF',n:1234}],
+      '2027-02': [{t:'NF',n:1456}]
+    },
+    total: [{t:'NF',n:2886},{t:'CF',n:44}]
+  },
+  {
+    country: 'International', pct: '+8.9%',
+    cells: {
+      '2026-09': [{t:'NF',n:12},{t:'CF',n:5}],
+      '2026-10': [{t:'NF',n:34}],
+      '2026-11': [{t:'CF',n:8}],
+      '2026-12': [{t:'NF',n:156},{t:'CF',n:22}],
+      '2027-01': [{t:'NF',n:2341},{t:'CF',n:45}],
+      '2027-02': [{t:'NF',n:3102}]
+    },
+    total: [{t:'NF',n:5645},{t:'CF',n:80}]
+  }
+];
+
+// ── MODAL ROUTE DATA ──────────────────────────────────────
+const MODAL_DATA = {
+  'Peru': {
+    totalFlights:'3,412', movements:'892', pct:'+0.5%', routes:'12', nf:'509', cf:'0',
+    data:[
+      {r:'LIM-SCL', ask:'+2.1%', flt:'+2.1%', tot:[{t:'NF',n:35}],
+       p:{'2026-12':[{t:'NF',n:1}],'2027-01':[{t:'NF',n:20}],'2027-02':[{t:'NF',n:14}]}},
+      {r:'LIM-BOG', ask:'+1.8%', flt:'+1.8%', tot:[{t:'NF',n:142}],
+       p:{'2027-01':[{t:'NF',n:75}],'2027-02':[{t:'NF',n:67}]}},
+      {r:'LIM-EZE', ask:'+1.2%', flt:'+1.2%', tot:[{t:'NF',n:89}],
+       p:{'2027-01':[{t:'NF',n:45}],'2027-02':[{t:'NF',n:44}]}},
+      {r:'LIM-GRU', ask:'+0.9%', flt:'+0.9%', tot:[{t:'NF',n:243}],
+       p:{'2027-01':[{t:'NF',n:120}],'2027-02':[{t:'NF',n:123}]}}
+    ]
+  },
+  'Chile': {
+    totalFlights:'8,234', movements:'5,201', pct:'+27.6%', routes:'32', nf:'17,648', cf:'757',
+    data:[
+      {r:'SCL-BOG', ask:'+31.8%', flt:'+31.9%', tot:[{t:'NF',n:8859},{t:'CF',n:400}],
+       p:{'2026-09':[{t:'NF',n:77},{t:'CF',n:77}],'2026-10':[{t:'NF',n:292},{t:'CF',n:290}],
+          '2026-11':[{t:'NF',n:87},{t:'CF',n:87}],'2026-12':[{t:'NF',n:119},{t:'CF',n:97}],
+          '2027-01':[{t:'NF',n:3877},{t:'CF',n:79}],'2027-02':[{t:'NF',n:4407},{t:'CF',n:128}]}},
+      {r:'SCL-EZE', ask:'+27.8%', flt:'+27.8%', tot:[{t:'NF',n:3156}],
+       p:{'2026-12':[{t:'NF',n:156}],'2027-01':[{t:'NF',n:1500}],'2027-02':[{t:'NF',n:1500}]}},
+      {r:'SCL-GRU', ask:'+25.1%', flt:'+25.1%', tot:[{t:'NF',n:2634},{t:'CF',n:357}],
+       p:{'2026-09':[{t:'CF',n:120}],'2026-11':[{t:'CF',n:237}],'2026-12':[{t:'NF',n:234}],
+          '2027-01':[{t:'NF',n:1200}],'2027-02':[{t:'NF',n:1200}]}},
+      {r:'SCL-MIA', ask:'+22.3%', flt:'+22.3%', tot:[{t:'NF',n:2445}],
+       p:{'2027-01':[{t:'NF',n:1218}],'2027-02':[{t:'NF',n:1227}]}},
+      {r:'SCL-AKL', ask:'+36.0%', flt:'+37.6%', tot:[{t:'NF',n:354}],
+       p:{'2026-12':[{t:'NF',n:1}],'2027-01':[{t:'NF',n:175}],'2027-02':[{t:'NF',n:178}]}},
+      {r:'SCL-MAD', ask:'+18.5%', flt:'+18.5%', tot:[{t:'NF',n:200}],
+       p:{'2026-11':[{t:'NF',n:12}],'2027-01':[{t:'NF',n:92}],'2027-02':[{t:'NF',n:96}]}}
+    ]
+  },
+  'Ecuador': {
+    totalFlights:'1,876', movements:'412', pct:'+0.7%', routes:'8', nf:'126', cf:'0',
+    data:[
+      {r:'UIO-SCL', ask:'+1.5%', flt:'+1.5%', tot:[{t:'NF',n:48}],
+       p:{'2027-01':[{t:'NF',n:24}],'2027-02':[{t:'NF',n:24}]}},
+      {r:'UIO-BOG', ask:'+0.8%', flt:'+0.8%', tot:[{t:'NF',n:28}],
+       p:{'2027-01':[{t:'NF',n:14}],'2027-02':[{t:'NF',n:14}]}},
+      {r:'GYE-SCL', ask:'+0.6%', flt:'+0.6%', tot:[{t:'NF',n:30}],
+       p:{'2027-01':[{t:'NF',n:15}],'2027-02':[{t:'NF',n:15}]}},
+      {r:'GYE-BOG', ask:'+0.4%', flt:'+0.4%', tot:[{t:'NF',n:20}],
+       p:{'2027-01':[{t:'NF',n:10}],'2027-02':[{t:'NF',n:10}]}}
+    ]
+  },
+  'Brazil': {
+    totalFlights:'4,567', movements:'1,234', pct:'+24.2%', routes:'21', nf:'1,226', cf:'1',
+    data:[
+      {r:'GRU-SCL', ask:'+28.5%', flt:'+28.5%', tot:[{t:'NF',n:548},{t:'CF',n:1}],
+       p:{'2026-09':[{t:'CF',n:1}],'2027-01':[{t:'NF',n:272}],'2027-02':[{t:'NF',n:276}]}},
+      {r:'GRU-BOG', ask:'+22.1%', flt:'+22.1%', tot:[{t:'NF',n:312}],
+       p:{'2027-01':[{t:'NF',n:155}],'2027-02':[{t:'NF',n:157}]}},
+      {r:'GIG-SCL', ask:'+20.4%', flt:'+20.4%', tot:[{t:'NF',n:208}],
+       p:{'2027-01':[{t:'NF',n:104}],'2027-02':[{t:'NF',n:104}]}},
+      {r:'SSA-SCL', ask:'+18.3%', flt:'+18.3%', tot:[{t:'NF',n:96}],
+       p:{'2027-01':[{t:'NF',n:48}],'2027-02':[{t:'NF',n:48}]}},
+      {r:'REC-SCL', ask:'+15.0%', flt:'+15.0%', tot:[{t:'NF',n:62}],
+       p:{'2027-01':[{t:'NF',n:32}],'2027-02':[{t:'NF',n:30}]}}
+    ]
+  },
+  'Colombia': {
+    totalFlights:'2,890', movements:'788', pct:'+12.3%', routes:'15', nf:'2,886', cf:'44',
+    data:[
+      {r:'BOG-SCL', ask:'+15.2%', flt:'+15.2%', tot:[{t:'NF',n:1456},{t:'CF',n:32}],
+       p:{'2026-10':[{t:'NF',n:45},{t:'CF',n:32}],'2026-11':[{t:'NF',n:63}],
+          '2026-12':[{t:'NF',n:88},{t:'CF',n:12}],'2027-01':[{t:'NF',n:620}],'2027-02':[{t:'NF',n:640}]}},
+      {r:'BOG-LIM', ask:'+12.8%', flt:'+12.8%', tot:[{t:'NF',n:818},{t:'CF',n:12}],
+       p:{'2026-11':[{t:'CF',n:12}],'2027-01':[{t:'NF',n:408}],'2027-02':[{t:'NF',n:410}]}},
+      {r:'BOG-GRU', ask:'+10.1%', flt:'+10.1%', tot:[{t:'NF',n:408}],
+       p:{'2027-01':[{t:'NF',n:204}],'2027-02':[{t:'NF',n:204}]}},
+      {r:'BOG-MIA', ask:'+8.5%', flt:'+8.5%', tot:[{t:'NF',n:204}],
+       p:{'2027-01':[{t:'NF',n:102}],'2027-02':[{t:'NF',n:102}]}}
+    ]
+  },
+  'International': {
+    totalFlights:'5,234', movements:'1,678', pct:'+8.9%', routes:'24', nf:'5,645', cf:'80',
+    data:[
+      {r:'MIA-SCL', ask:'+12.3%', flt:'+12.3%', tot:[{t:'NF',n:1540},{t:'CF',n:22}],
+       p:{'2026-09':[{t:'NF',n:12},{t:'CF',n:5}],'2026-10':[{t:'NF',n:34}],
+          '2026-11':[{t:'CF',n:17}],'2026-12':[{t:'NF',n:156},{t:'CF',n:17}],
+          '2027-01':[{t:'NF',n:668}],'2027-02':[{t:'NF',n:670}]}},
+      {r:'JFK-SCL', ask:'+10.1%', flt:'+10.1%', tot:[{t:'NF',n:1045},{t:'CF',n:21}],
+       p:{'2026-11':[{t:'CF',n:8}],'2026-12':[{t:'CF',n:13}],
+          '2027-01':[{t:'NF',n:522}],'2027-02':[{t:'NF',n:523}]}},
+      {r:'MAD-SCL', ask:'+8.7%', flt:'+8.7%', tot:[{t:'NF',n:1060},{t:'CF',n:30}],
+       p:{'2026-09':[{t:'CF',n:3}],'2026-10':[{t:'CF',n:12}],'2026-12':[{t:'CF',n:15}],
+          '2027-01':[{t:'NF',n:530}],'2027-02':[{t:'NF',n:530}]}},
+      {r:'FCO-SCL', ask:'+6.4%', flt:'+6.4%', tot:[{t:'NF',n:980},{t:'CF',n:7}],
+       p:{'2026-10':[{t:'CF',n:7}],'2027-01':[{t:'NF',n:490}],'2027-02':[{t:'NF',n:490}]}},
+      {r:'LHR-SCL', ask:'+5.2%', flt:'+5.2%', tot:[{t:'NF',n:680}],
+       p:{'2027-01':[{t:'NF',n:340}],'2027-02':[{t:'NF',n:340}]}},
+      {r:'SYD-SCL', ask:'+4.1%', flt:'+4.1%', tot:[{t:'NF',n:340}],
+       p:{'2027-01':[{t:'NF',n:170}],'2027-02':[{t:'NF',n:170}]}}
+    ]
+  }
+};
+
+// ── HELPERS ──────────────────────────────────────────────
+function fmt(n) { return n.toLocaleString('en-US'); }
+
+function cellClass(entries) {
+  if (!entries || entries.length === 0) return 'empty';
+  const hasNF = entries.some(e => e.t === 'NF');
+  const hasCF = entries.some(e => e.t === 'CF');
+  if (hasNF && hasCF) return 'both';
+  if (hasNF) return 'new-only';
+  if (hasCF) return 'cnl-only';
+  return 'empty';
+}
+
+function renderEntries(entries, cls) {
+  if (!entries || entries.length === 0) return `<div class="${cls} empty"></div>`;
+  const inner = entries.map(e =>
+    `<span class="${cls === 'mcell-data' ? 'maction-entry' : 'action-entry'}">${e.t === 'NF' ? 'NEW FLIGHT' : 'CANCELED FLIGHT'}(${fmt(e.n)})</span>`
+  ).join('');
+  return `<div class="${cls} ${cellClass(entries)}"><div class="${cls === 'mcell-data' ? 'maction-row' : 'action-row'}">${inner}</div></div>`;
+}
+
+function renderTotalCell(entries, cls) {
+  if (!entries || entries.length === 0) return `<div class="${cls}"></div>`;
+  const inner = entries.map(e =>
+    `<span class="${e.t === 'NF' ? (cls === 'mcell-total' ? 'mtotal-nf' : 'total-new') : (cls === 'mcell-total' ? 'mtotal-cf' : 'total-cnl')}">${e.t === 'NF' ? 'NEW FLIGHT' : 'CANCELED FLIGHT'} (${fmt(e.n)})</span>`
+  ).join('');
+  return `<div class="${cls}">${inner}</div>`;
+}
+
+// ── RENDER MAIN TABLE ────────────────────────────────────
+function buildMain() {
+  const tbody = document.getElementById('mainTbody');
+  tbody.innerHTML = ROWS.map(row => {
+    const periodCells = PERIODS.map(p => {
+      const entries = row.cells[p] || [];
+      return `<td class="col-period">${renderEntries(entries, 'cell-data')}</td>`;
+    }).join('');
+    return `<tr onclick="openModal('${row.country}')">
+      <td class="col-country"><div class="cell-country">${row.country}</div></td>
+      <td class="col-flights"><div class="cell-flights pos">${row.pct}</div></td>
+      ${periodCells}
+      <td class="col-total">${renderTotalCell(row.total, 'cell-total')}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── MODAL OPEN / CLOSE ───────────────────────────────────
+let currentCountry = null;
+let allRoutes = [];
+
+function openModal(country) {
+  currentCountry = country;
+  const d = MODAL_DATA[country];
+  allRoutes = d.data;
+
+  document.getElementById('modalTitle').textContent = `Schedule Publication — ${country}`;
+
+  // Stats
+  document.getElementById('modalStats').innerHTML = `
+    <div class="stats-left">
+      <div class="stat-item"><span class="stat-label">Total Airline Flights</span><span class="stat-value">${d.totalFlights}</span></div>
+      <div class="stat-item"><span class="stat-label">Movements Flight Count</span><span class="stat-value">${d.movements}</span></div>
+      <div class="stat-item"><span class="stat-label">% Flights</span><span class="stat-value pos">${d.pct}</span></div>
+      <div class="stat-item"><span class="stat-label">Total Routes</span><span class="stat-value">${d.routes}</span></div>
+    </div>
+    <div class="stats-right">
+      <span class="badge badge-nf"><span class="badge-label">NEW FLIGHT</span>${d.nf}</span>
+      ${d.cf !== '0' ? `<span class="badge badge-cf"><span class="badge-label">CANCELED FLIGHT</span>${d.cf}</span>` : ''}
+      <button class="btn-export">Export Summary</button>
+    </div>`;
+
+  document.getElementById('pageInfo').textContent = `Page 1 of ${Math.ceil(allRoutes.length / 10)}`;
+  renderModalTable(allRoutes);
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModalBtn() { document.getElementById('modalOverlay').classList.remove('open'); }
+function closeModal(e) { if (e.target === document.getElementById('modalOverlay')) closeModalBtn(); }
+
+function filterRoutes(val) {
+  const filtered = allRoutes.filter(r => r.r.toLowerCase().includes(val.toLowerCase()));
+  renderModalTable(filtered);
+}
+
+function renderModalTable(routes) {
+  const tbody = document.getElementById('modalTbody');
+  tbody.innerHTML = routes.map(route => {
+    const periodCells = PERIODS.map(p => {
+      const entries = route.p[p] || [];
+      return `<td class="mcol-period">${renderEntries(entries, 'mcell-data')}</td>`;
+    }).join('');
+    return `<tr>
+      <td class="mcol-route"><div class="mcell-route">${route.r}</div></td>
+      <td class="mcol-ask"><div class="mcell-pct pos">${route.ask}</div></td>
+      <td class="mcol-flt"><div class="mcell-pct pos">${route.flt}</div></td>
+      <td class="mcol-total">${renderTotalCell(route.tot, 'mcell-total')}</td>
+      ${periodCells}
+    </tr>`;
+  }).join('');
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModalBtn(); });
+buildMain();
+</script>
+</body>
+</html>

@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Plataforma de Asignación Logística — Rentokil</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --primary: #1565c0; --primary-dk: #003c8f; --accent: #00897b;
+    --bg: #f5f5f5; --surface: #fff; --sidebar-w: 240px;
+    --toolbar-h: 52px; --text: #212121; --text-sec: #616161; --border: #e0e0e0;
+  }
+  html, body { height: 100%; font-family: Roboto, 'Segoe UI', system-ui, sans-serif; color: var(--text); overflow: hidden; font-size: 13px; }
+  .app { display: flex; flex-direction: column; height: 100vh; }
+
+  /* TOOLBAR */
+  .toolbar { height: var(--toolbar-h); background: var(--primary); color: #fff; display: flex; align-items: center; padding: 0 16px; gap: 12px; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,.3); z-index: 400; }
+  .tb-icon { width: 34px; height: 34px; border-radius: 50%; border: none; background: rgba(255,255,255,.12); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+  .tb-icon:hover { background: rgba(255,255,255,.22); }
+  .tb-brand { font-size: 15px; font-weight: 500; flex: 1; }
+  .tb-user  { font-size: 12px; opacity: .85; }
+  .zona-sel { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.3); color: #fff; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-family: inherit; cursor: pointer; }
+  .zona-sel option { color: #212121; background: #fff; }
+
+  /* BODY */
+  .body { display: flex; flex: 1; overflow: hidden; }
+
+  /* SIDENAV */
+  .sidenav { width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0; }
+  .sidenav::-webkit-scrollbar { width: 3px; }
+  .sidenav::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
+  .snav-logo { padding: 14px 12px 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+  .logo-sq { width: 30px; height: 30px; border-radius: 5px; background: var(--primary); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 15px; font-weight: 900; flex-shrink: 0; }
+  .logo-lbl { font-size: 10px; font-weight: 700; color: var(--primary); letter-spacing: .04em; line-height: 1.3; }
+  nav { flex: 1; padding: 6px 0; }
+  .ni { display: flex; align-items: center; gap: 12px; padding: 9px 16px; cursor: pointer; color: var(--text-sec); font-size: 13px; transition: background .12s, color .12s; }
+  .ni:hover { background: rgba(21,101,192,.07); color: var(--primary); }
+  .ni.act { color: var(--primary); font-weight: 600; }
+  .ni-icon { font-size: 18px; width: 20px; text-align: center; flex-shrink: 0; }
+  .ns { background: rgba(0,0,0,.02); }
+  .nsi { display: flex; align-items: center; padding: 7px 16px 7px 48px; cursor: pointer; color: var(--text-sec); font-size: 12.5px; transition: background .12s, color .12s; }
+  .nsi:hover { color: var(--primary); background: rgba(21,101,192,.05); }
+  .nsi.act { color: var(--primary); font-weight: 600; border-left: 3px solid var(--primary); padding-left: 45px; }
+
+  /* CONTENT */
+  .content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .breadcrumb { height: 38px; display: flex; align-items: center; padding: 0 20px; gap: 6px; font-size: 12px; color: var(--text-sec); border-bottom: 1px solid var(--border); background: #fff; flex-shrink: 0; }
+  .bc-link { color: var(--primary); cursor: pointer; }
+
+  /* SPLIT */
+  .main-split { display: flex; flex: 1; overflow: hidden; }
+
+  /* LEFT PANEL */
+  .left-panel { width: 330px; flex-shrink: 0; display: flex; flex-direction: column; border-right: 1px solid var(--border); background: var(--surface); overflow: hidden; }
+  .lp-head { padding: 12px 14px 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .lp-title { font-size: 14px; font-weight: 600; }
+  .cnt-badge { font-size: 11px; background: var(--primary); color: #fff; border-radius: 10px; padding: 1px 8px; }
+  .table-wrap { flex: 1; overflow-y: auto; }
+  .table-wrap::-webkit-scrollbar { width: 4px; }
+  .table-wrap::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
+  table.ct { width: 100%; border-collapse: collapse; font-size: 12px; }
+  table.ct thead th { position: sticky; top: 0; background: #fafafa; border-bottom: 1px solid var(--border); padding: 7px 8px; text-align: left; font-weight: 600; color: var(--text-sec); white-space: nowrap; font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; }
+  table.ct tbody tr { cursor: pointer; transition: background .1s; border-bottom: 1px solid #f0f0f0; }
+  table.ct tbody tr:hover { background: #e3f2fd; }
+  table.ct tbody tr.sel { background: #bbdefb; }
+  table.ct td { padding: 7px 8px; vertical-align: middle; }
+  .cb { width: 13px; height: 13px; accent-color: var(--primary); cursor: pointer; }
+  .rut { color: var(--text-sec); font-size: 10.5px; white-space: nowrap; }
+  .asgn { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 10px; font-weight: 600; color: #fff; }
+  .lp-actions { padding: 10px 14px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 7px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; border: none; border-radius: 4px; font-size: 13px; font-family: inherit; font-weight: 500; cursor: pointer; transition: all .15s; width: 100%; }
+  .btn-p { background: var(--primary); color: #fff; }
+  .btn-p:hover { background: var(--primary-dk); }
+  .btn-p:disabled { background: #90a4ae; cursor: default; }
+  .btn-o { background: transparent; border: 1px solid var(--border); color: var(--text-sec); }
+  .btn-o:hover { background: #f5f5f5; }
+  .btn-acc { background: #388e3c; color: #fff; }
+  .btn-acc:hover { background: #2e7d32; }
+  .btn-edt { background: var(--accent); color: #fff; }
+  .btn-cnl { background: #c62828; color: #fff; }
+  .prop-box { background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 6px; padding: 12px; text-align: center; }
+  .prop-box h3 { font-size: 12.5px; font-weight: 600; color: #1b5e20; margin-bottom: 10px; }
+  .prop-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+  .prop-btns .btn { padding: 6px 10px; font-size: 12px; }
+  .resumen-tbl tbody tr:nth-child(even) { background: rgba(0,0,0,.025); }
+  .resumen-tbl td, .resumen-tbl th { padding: 4px 5px; }
+  .spin-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px; }
+  .spin { width: 32px; height: 32px; border: 3px solid #e3f2fd; border-top-color: var(--primary); border-radius: 50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin-txt { font-size: 11.5px; color: var(--text-sec); text-align: center; }
+
+  /* MAP */
+  .right-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+  .map-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 7px 14px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; z-index: 1; }
+  .map-bar-title { font-size: 12px; font-weight: 600; flex: 1; }
+  .legend { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .leg { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-sec); }
+  .leg-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .leg-diamond { width: 10px; height: 10px; background: #212121; transform: rotate(45deg); }
+  #map { flex: 1; z-index: 0; }
+
+  /* SAT MODAL */
+  .m-ov { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 500; display: none; align-items: center; justify-content: center; padding: 20px; }
+  .m-ov.open { display: flex; }
+  .m-card { background: #fff; border-radius: 8px; box-shadow: 0 8px 40px rgba(0,0,0,.25); width: 100%; max-width: 720px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; }
+  .m-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+  .m-head h2 { font-size: 15px; font-weight: 600; }
+  .m-close { width: 26px; height: 26px; border-radius: 50%; border: none; background: #f5f5f5; cursor: pointer; font-size: 14px; }
+  .m-close:hover { background: #e0e0e0; }
+  .sat-btns { display: flex; gap: 8px; padding: 10px 18px; border-bottom: 1px solid var(--border); }
+  .sat-tog { padding: 4px 13px; border: 1px solid var(--border); border-radius: 4px; background: #fff; font-size: 12px; font-family: inherit; cursor: pointer; color: var(--text-sec); }
+  .sat-tog.act { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .m-body { overflow: auto; padding: 14px 18px; }
+  .m-body::-webkit-scrollbar { width: 5px; height: 5px; }
+  .m-body::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+  table.st { border-collapse: collapse; font-size: 12px; width: max-content; min-width: 100%; }
+  table.st th { background: #fafafa; border: 1px solid var(--border); padding: 7px 13px; font-weight: 600; white-space: nowrap; font-size: 11px; color: var(--text-sec); }
+  table.st td { border: 1px solid var(--border); padding: 7px 13px; text-align: center; font-weight: 600; font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .sg { background: #e8f5e9; color: #2e7d32; }
+  .sy { background: #fffde7; color: #f57f17; }
+  .sr { background: #ffebee; color: #c62828; }
+
+  .demo-badge { position: fixed; bottom: 10px; right: 10px; background: rgba(21,101,192,.88); backdrop-filter: blur(6px); color: rgba(255,255,255,.8); font-size: 10.5px; padding: 4px 10px; border-radius: 14px; pointer-events: none; z-index: 999; }
+  .demo-badge strong { color: #fff; }
+
+  /* Leaflet custom markers */
+  .cmarker { border-radius: 50%; border: 2.5px solid #fff; box-shadow: 0 1px 5px rgba(0,0,0,.4); transition: transform .2s; }
+  .cmarker:hover { transform: scale(1.4); }
+  .depot-marker { width: 16px; height: 16px; background: #212121; transform: rotate(45deg); border: 2.5px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- TOOLBAR -->
+  <header class="toolbar">
+    <button class="tb-icon">☰</button>
+    <span class="tb-brand">Rentokil Initial Chile — Plataforma Logística</span>
+    <span class="tb-user">Usuario: admin@rentokil.cl</span>
+    <span style="font-size:12px;opacity:.85">Zona:</span>
+    <select class="zona-sel"><option>Santiago RM</option><option>Valparaíso</option><option>Biobío</option></select>
+    <button class="tb-icon">👤</button>
+    <button class="tb-icon">⏏</button>
+  </header>
+
+  <div class="body">
+    <!-- SIDENAV -->
+    <aside class="sidenav">
+      <div class="snav-logo">
+        <div class="logo-sq">R</div>
+        <div class="logo-lbl">PLATAFORMA<br>ASIGNACIÓN LOG.</div>
+      </div>
+      <nav>
+        <div class="ni"><span class="ni-icon">🏠</span>Inicio</div>
+        <div class="ni act"><span class="ni-icon">✏️</span>Ingreso de datos</div>
+        <div class="ns">
+          <div class="nsi">Cliente antiguo</div>
+          <div class="nsi">Cliente nuevo</div>
+        </div>
+        <div class="ni act"><span class="ni-icon">👤</span>Asignación de clientes</div>
+        <div class="ns">
+          <div class="nsi act">Asignación por modelo</div>
+          <div class="nsi">Asignación manual</div>
+        </div>
+        <div class="ni"><span class="ni-icon">🗺️</span>Gestión de rutas</div>
+        <div class="ns">
+          <div class="nsi">Revisar ruta</div>
+          <div class="nsi">Editar ruta</div>
+          <div class="nsi">Grupo logístico</div>
+          <div class="nsi">Dar de baja</div>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- CONTENT -->
+    <div class="content">
+      <div class="breadcrumb">
+        <span class="bc-link">Asignación de clientes</span>
+        <span style="opacity:.4">›</span>
+        <span>Asignación por modelo</span>
+      </div>
+      <div class="main-split">
+
+        <!-- LEFT PANEL -->
+        <div class="left-panel">
+          <div class="lp-head">
+            <span class="lp-title">Clientes nuevos</span>
+            <span class="cnt-badge">8</span>
+          </div>
+          <div class="table-wrap">
+            <table class="ct">
+              <thead><tr><th style="width:28px"></th><th>RUT</th><th>NOMBRE</th><th>N° VENTA</th></tr></thead>
+              <tbody id="ctbody"></tbody>
+            </table>
+          </div>
+          <div class="lp-actions">
+            <div id="actionContent"></div>
+          </div>
+        </div>
+
+        <!-- MAP -->
+        <div class="right-panel">
+          <div class="map-bar">
+            <span class="map-bar-title">Mapa de Asignación — Santiago RM</span>
+            <div class="legend" id="legend">
+              <div class="leg"><div class="leg-diamond"></div>Bodega central</div>
+              <div class="leg" style="color:#9e9e9e"><div class="leg-dot" style="background:#9e9e9e"></div>Sin asignar</div>
+            </div>
+          </div>
+          <div id="map"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SAT MODAL -->
+<div class="m-ov" id="satModal" onclick="closeSat(event)">
+  <div class="m-card" onclick="event.stopPropagation()">
+    <div class="m-head"><h2>Saturaciones</h2><button class="m-close" onclick="closeSat()">✕</button></div>
+    <div class="sat-btns">
+      <button class="sat-tog act" onclick="satView('dia',this)">Por día logístico</button>
+      <button class="sat-tog" onclick="satView('semana',this)">Por semana logística</button>
+    </div>
+    <div class="m-body" id="satBody"></div>
+  </div>
+</div>
+
+<div class="demo-badge">Demo visual — <strong>Rentokil Plataforma Logística</strong></div>
+
+<script>
+// ── DATA ───────────────────────────────────────────────────────────────────
+const DEPOT = [-33.4567, -70.6710];
+
+const GROUPS = [
+  { id:0, name:'GL-Norte',       color:'#1565c0', zone:'Norte',       sat:{ LUN:68.4,MIE:71.2,VIE:62.1 }, wsat:{ S1:70.5,S2:65.8,S3:68.9,S4:71.2 } },
+  { id:1, name:'GL-Norponiente', color:'#2e7d32', zone:'Norponiente', sat:{ MAR:55.3,JUE:58.1,VIE:52.4 }, wsat:{ S1:55.1,S2:57.3,S3:54.9,S4:58.1 } },
+  { id:2, name:'GL-Poniente',    color:'#e65100', zone:'Poniente',    sat:{ LUN:82.1,MIE:87.6,VIE:84.3 }, wsat:{ S1:83.0,S2:85.2,S3:82.7,S4:87.6 } },
+  { id:3, name:'GL-Centro',      color:'#6a1b9a', zone:'Centro',      sat:{ LUN:76.3,MIE:74.9,VIE:78.4 }, wsat:{ S1:75.5,S2:77.1,S3:74.8,S4:78.4 } },
+  { id:4, name:'GL-Oriente',     color:'#00695c', zone:'Oriente',     sat:{ MAR:63.7,JUE:66.4,VIE:61.2 }, wsat:{ S1:64.2,S2:62.8,S3:65.9,S4:66.4 } },
+  { id:5, name:'GL-Sur',         color:'#b71c1c', zone:'Sur',         sat:{ LUN:89.3,MIE:91.7,VIE:87.5 }, wsat:{ S1:90.1,S2:88.4,S3:89.7,S4:91.7 } },
+];
+
+// Existing clients already assigned to routes (background)
+const EXISTING = [
+  // GL-Norte
+  { ll:[-33.4244,-70.6073], g:0 }, { ll:[-33.4178,-70.5989], g:0 }, { ll:[-33.4312,-70.6134], g:0 },
+  { ll:[-33.4189,-70.6045], g:0 }, { ll:[-33.4267,-70.6023], g:0 }, { ll:[-33.4145,-70.5934], g:0 },
+  { ll:[-33.4334,-70.6089], g:0 }, { ll:[-33.4223,-70.6156], g:0 },
+  // GL-Norponiente
+  { ll:[-33.4034,-70.6923], g:1 }, { ll:[-33.3956,-70.6856], g:1 }, { ll:[-33.4089,-70.6978], g:1 },
+  { ll:[-33.3912,-70.6789], g:1 }, { ll:[-33.4023,-70.6867], g:1 }, { ll:[-33.3878,-70.6934], g:1 },
+  { ll:[-33.4056,-70.6812], g:1 }, { ll:[-33.3945,-70.7012], g:1 },
+  // GL-Poniente
+  { ll:[-33.4389,-70.7689], g:2 }, { ll:[-33.4445,-70.7823], g:2 }, { ll:[-33.4512,-70.7745], g:2 },
+  { ll:[-33.4334,-70.7656], g:2 }, { ll:[-33.4423,-70.7912], g:2 }, { ll:[-33.4467,-70.7623], g:2 },
+  { ll:[-33.4356,-70.7889], g:2 }, { ll:[-33.4489,-70.7712], g:2 },
+  // GL-Centro
+  { ll:[-33.4512,-70.6712], g:3 }, { ll:[-33.4456,-70.6623], g:3 }, { ll:[-33.4489,-70.6834], g:3 },
+  { ll:[-33.4578,-70.6745], g:3 }, { ll:[-33.4423,-70.6689], g:3 }, { ll:[-33.4534,-70.6578], g:3 },
+  { ll:[-33.4467,-70.6767], g:3 }, { ll:[-33.4601,-70.6623], g:3 },
+  // GL-Oriente
+  { ll:[-33.4034,-70.5712], g:4 }, { ll:[-33.4112,-70.5634], g:4 }, { ll:[-33.3978,-70.5823], g:4 },
+  { ll:[-33.4189,-70.5578], g:4 }, { ll:[-33.4067,-70.5756], g:4 }, { ll:[-33.3945,-70.5645], g:4 },
+  { ll:[-33.4156,-70.5712], g:4 }, { ll:[-33.4023,-70.5689], g:4 },
+  // GL-Sur
+  { ll:[-33.5123,-70.6845], g:5 }, { ll:[-33.5234,-70.6934], g:5 }, { ll:[-33.5078,-70.6712], g:5 },
+  { ll:[-33.5189,-70.7023], g:5 }, { ll:[-33.5034,-70.6889], g:5 }, { ll:[-33.5267,-70.6756], g:5 },
+  { ll:[-33.5145,-70.7012], g:5 }, { ll:[-33.5312,-70.6823], g:5 },
+];
+
+const NEW_CLIENTS = [
+  { id:0, rut:'12.345.678-9', name:'Comercial Pacífico Ltda.',  nv:'NV-10234', g:0, ll:[-33.4190,-70.6082] },
+  { id:1, rut:'15.678.901-2', name:'Ferretería El Maestro',     nv:'NV-10235', g:1, ll:[-33.4023,-70.6945] },
+  { id:2, rut:'8.901.234-5',  name:'Oficinas Corporativas ABC', nv:'NV-10236', g:2, ll:[-33.4445,-70.7756] },
+  { id:3, rut:'11.234.567-8', name:'Centro Médico Las Condes',  nv:'NV-10237', g:4, ll:[-33.4145,-70.5723] },
+  { id:4, rut:'14.567.890-1', name:'Restaurante Don Carlos',    nv:'NV-10238', g:3, ll:[-33.4489,-70.6678] },
+  { id:5, rut:'7.890.123-4',  name:'Hotel Plaza Santiago',      nv:'NV-10239', g:3, ll:[-33.4467,-70.6634] },
+  { id:6, rut:'10.123.456-7', name:'Supermercado Oriente',      nv:'NV-10240', g:4, ll:[-33.4078,-70.5678] },
+  { id:7, rut:'13.456.789-0', name:'Clínica Santa María',       nv:'NV-10241', g:0, ll:[-33.4212,-70.6045] },
+];
+
+// ── MAP SETUP ──────────────────────────────────────────────────────────────
+const map = L.map('map', { center: [-33.458, -70.645], zoom: 12, zoomControl: true });
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/attributions">CARTO</a>',
+  subdomains: 'abcd', maxZoom: 19,
+}).addTo(map);
+
+// ── ICONS ─────────────────────────────────────────────────────────────────
+const depotIcon = L.divIcon({
+  className: '',
+  html: '<div class="depot-marker"></div>',
+  iconSize: [16, 16], iconAnchor: [8, 8],
+});
+
+function clientIcon(color, size = 11) {
+  return L.divIcon({
+    className: '',
+    html: `<div class="cmarker" style="width:${size}px;height:${size}px;background:${color}"></div>`,
+    iconSize: [size, size], iconAnchor: [size/2, size/2],
+  });
+}
+
+// ── PLACE MARKERS ─────────────────────────────────────────────────────────
+L.marker(DEPOT, { icon: depotIcon, zIndexOffset: 1000 })
+  .addTo(map)
+  .bindTooltip('<b>Bodega Central</b>', { permanent: false });
+
+// Existing route clients
+EXISTING.forEach(c => {
+  L.marker(c.ll, { icon: clientIcon(GROUPS[c.g].color, 9) })
+    .addTo(map)
+    .bindTooltip(GROUPS[c.g].name);
+});
+
+// New client markers (gray initially)
+const newMarkers = NEW_CLIENTS.map(c => {
+  const m = L.marker(c.ll, { icon: clientIcon('#9e9e9e', 13), zIndexOffset: 500 })
+    .addTo(map)
+    .bindTooltip(`<b>${c.name}</b><br><span style="color:#9e9e9e">Sin asignar</span>`, { direction: 'top' });
+  return m;
+});
+
+let routeLines = [];
+let phase = 'idle';
+let selClient = -1;
+const selectedClients = new Set(); // ids of checked clients
+
+function toggleSelect(id, event) {
+  event.stopPropagation();
+  const c = NEW_CLIENTS[id];
+  const m = newMarkers[id];
+  if (selectedClients.has(id)) {
+    selectedClients.delete(id);
+    m.unbindTooltip();
+    m.bindTooltip(`<b>${c.name}</b><br><span style="color:#9e9e9e">Sin asignar</span>`, { direction: 'top' });
+  } else {
+    selectedClients.add(id);
+    m.unbindTooltip();
+    m.bindTooltip(`<b>${c.name}</b>`, { permanent: true, direction: 'top' });
+    m.openTooltip();
+  }
+  updateOptimizeBtn();
+  fitBoundsToSelected();
+}
+
+function fitBoundsToSelected() {
+  if (phase !== 'idle') return;
+  const ids = [...selectedClients];
+  if (ids.length === 0) return;
+  const points = ids.map(id => L.latLng(NEW_CLIENTS[id].ll));
+  if (points.length === 1) {
+    map.flyTo(points[0], 13, { duration: 0.7 });
+  } else {
+    map.fitBounds(L.latLngBounds(points), { padding: [90, 90], animate: true, duration: 0.8, maxZoom: 14 });
+  }
+}
+
+function updateOptimizeBtn() {
+  const btn = document.getElementById('btnOptimizar');
+  if (!btn) return;
+  const n = selectedClients.size;
+  btn.disabled = n === 0;
+  btn.innerHTML = n > 0
+    ? `⚡ Optimizar ${n} cliente${n > 1 ? 's' : ''}`
+    : '⚡ Ejecutar Optimización';
+  btn.style.opacity = n === 0 ? '0.55' : '1';
+}
+
+// ── NEAREST NEIGHBOR TSP ──────────────────────────────────────────────────
+function dist(a, b) {
+  return Math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2);
+}
+
+function nearestNeighbor(start, points) {
+  const remaining = [...points];
+  const route = [start];
+  let cur = start;
+  while (remaining.length) {
+    let bestI = 0, bestD = Infinity;
+    remaining.forEach((p, i) => { const d = dist(p, cur); if (d < bestD) { bestD = d; bestI = i; } });
+    cur = remaining[bestI];
+    route.push(cur);
+    remaining.splice(bestI, 1);
+  }
+  route.push(start);
+  return route;
+}
+
+// ── ANIMATE POLYLINE ──────────────────────────────────────────────────────
+function animateLine(latlngs, color, weight, dashArray, delayPerPoint, onDone) {
+  const line = L.polyline([], { color, weight, opacity: 0.8, dashArray }).addTo(map);
+  routeLines.push(line);
+  let i = 0;
+  function step() {
+    if (i < latlngs.length) { line.addLatLng(latlngs[i++]); setTimeout(step, delayPerPoint); }
+    else if (onDone) onDone();
+  }
+  step();
+}
+
+// ── EJECUTAR OPTIMIZACIÓN ─────────────────────────────────────────────────
+let lastAssignedCount = 0;
+let lastActiveGIs = [];
+let lastToAssign = [];
+
+function ejecutarOptimizacion() {
+  if (phase !== 'idle') return;
+  const toAssign = NEW_CLIENTS.filter(c => selectedClients.has(c.id));
+  if (toAssign.length === 0) return;
+  phase = 'running';
+  lastAssignedCount = toAssign.length;
+
+  document.getElementById('actionContent').innerHTML = `
+    <div class="spin-box">
+      <div class="spin"></div>
+      <span class="spin-txt">Ejecutando algoritmo de optimización…<br><small style="opacity:.7">Calculando rutas óptimas</small></span>
+    </div>`;
+
+  // Step 1: after 1.8s, assign colors to selected clients one by one
+  setTimeout(() => {
+    toAssign.forEach((c, i) => {
+      setTimeout(() => {
+        const g = GROUPS[c.g];
+        newMarkers[c.id].setIcon(clientIcon(g.color, 14));
+        newMarkers[c.id].unbindTooltip();
+        newMarkers[c.id].bindTooltip(`<b>${c.name}</b><br><span style="color:${g.color};font-weight:600">${g.name}</span>`, { permanent: true, direction: 'top' });
+        newMarkers[c.id].openTooltip();
+        // pulse ring
+        const pulse = L.circleMarker(c.ll, { radius: 18, color: g.color, weight: 2, fillOpacity: 0, opacity: 0.6 }).addTo(map);
+        setTimeout(() => map.removeLayer(pulse), 600);
+      }, i * 220);
+    });
+
+    // Step 2: after all clients colored, draw routes
+    const colorDelay = toAssign.length * 220 + 300;
+    setTimeout(() => drawRoutes(toAssign), colorDelay);
+  }, 1800);
+}
+
+function drawRoutes(toAssign) {
+  const grouped = GROUPS.map(() => []);
+  EXISTING.forEach(c => grouped[c.g].push(c.ll));
+  toAssign.forEach(c => grouped[c.g].push(c.ll));
+
+  // Only draw for groups that received a new client
+  const activeGIs = [...new Set(toAssign.map(c => c.g))];
+  lastActiveGIs = activeGIs;
+  lastToAssign = toAssign;
+
+  let done = 0;
+  activeGIs.forEach((gi, idx) => {
+    setTimeout(() => {
+      const route = nearestNeighbor(DEPOT, grouped[gi]);
+      animateLine(route, GROUPS[gi].color, 2.5, '8,5', 45, () => {
+        done++;
+        if (done === activeGIs.length) fitAndShowPropuesta();
+      });
+    }, idx * 180);
+  });
+}
+
+function fitAndShowPropuesta() {
+  const allPoints = [];
+  routeLines.forEach(l => l.getLatLngs().forEach(ll => allPoints.push(ll)));
+  allPoints.push(L.latLng(DEPOT));
+
+  if (allPoints.length > 1) {
+    map.fitBounds(L.latLngBounds(allPoints), { padding: [60, 60], animate: true, duration: 1.2 });
+  }
+  setTimeout(() => showPropuesta(), 1400);
+}
+
+function buildResumenTable() {
+  const rows = lastActiveGIs.map(gi => {
+    const g = GROUPS[gi];
+    const newCount = lastToAssign.filter(c => c.g === gi).length;
+    const satVals = Object.values(g.sat);
+    const satMax = Math.max(...satVals).toFixed(1);
+    const dias = Object.keys(g.sat).join(', ');
+    const tiempoEst = (newCount * 28 + satVals.length * 42);
+    return `<tr>
+      <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${g.color};margin-right:5px"></span>${g.name}</td>
+      <td style="text-align:center">${dias}</td>
+      <td style="text-align:center">${satMax}%</td>
+      <td style="text-align:center">+${newCount}</td>
+      <td style="text-align:center">${tiempoEst} min</td>
+    </tr>`;
+  }).join('');
+  return `
+    <div style="margin-bottom:8px">
+      <div style="font-size:11px;font-weight:600;color:var(--text-sec);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Resumen de asignación</div>
+      <div style="overflow-x:auto">
+        <table class="resumen-tbl" style="width:100%;border-collapse:collapse;font-size:11px">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border)">
+              <th style="text-align:left;padding:3px 4px;color:var(--text-sec);font-weight:500">Grupo</th>
+              <th style="text-align:center;padding:3px 4px;color:var(--text-sec);font-weight:500">Días</th>
+              <th style="text-align:center;padding:3px 4px;color:var(--text-sec);font-weight:500">Sat.</th>
+              <th style="text-align:center;padding:3px 4px;color:var(--text-sec);font-weight:500">Nuevos</th>
+              <th style="text-align:center;padding:3px 4px;color:var(--text-sec);font-weight:500">T. est.</th>
+            </tr>
+          </thead>
+          <tbody style="color:var(--text)">
+            ${rows}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function showPropuesta() {
+  phase = 'done';
+  renderTable(true);
+  updateLegend();
+  document.getElementById('actionContent').innerHTML = `
+    ${buildResumenTable()}
+    <div class="prop-box">
+      <h3>¿Acepta la propuesta de asignación?</h3>
+      <div class="prop-btns">
+        <button class="btn btn-cnl" style="flex:1" onclick="resetDemo()">Cancelar</button>
+        <button class="btn btn-edt" style="flex:1" onclick="resetDemo()">Editar</button>
+        <button class="btn btn-acc" style="flex:1.4" onclick="aceptar()">✓ Aceptar</button>
+      </div>
+    </div>
+    <button class="btn btn-o" style="margin-top:6px" onclick="openSat()">📊 Ver saturaciones</button>`;
+}
+
+function aceptar() {
+  const n = lastAssignedCount;
+  document.getElementById('actionContent').innerHTML = `
+    <div class="prop-box" style="background:#e3f2fd;border-color:#90caf9">
+      <h3 style="color:#0d47a1">✓ Propuesta aceptada exitosamente</h3>
+      <p style="font-size:12px;color:#1565c0;margin-top:4px">${n} cliente${n !== 1 ? 's' : ''} asignado${n !== 1 ? 's' : ''} a sus rutas</p>
+    </div>
+    <button class="btn btn-o" style="margin-top:6px" onclick="openSat()">📊 Ver saturaciones</button>
+    <button class="btn btn-o" style="margin-top:5px" onclick="resetDemo()">↩ Nueva asignación</button>`;
+}
+
+function resetDemo() {
+  phase = 'idle';
+  selClient = -1;
+  selectedClients.clear();
+  lastAssignedCount = 0;
+  routeLines.forEach(l => map.removeLayer(l));
+  routeLines = [];
+  newMarkers.forEach((m, i) => {
+    m.setIcon(clientIcon('#9e9e9e', 13));
+    m.unbindTooltip();
+    m.bindTooltip(`<b>${NEW_CLIENTS[i].name}</b><br><span style="color:#9e9e9e">Sin asignar</span>`, { direction: 'top' });
+  });
+  renderTable(false);
+  updateLegend();
+  setActions();
+}
+
+// ── TABLE ─────────────────────────────────────────────────────────────────
+function renderTable(assigned) {
+  document.getElementById('ctbody').innerHTML = NEW_CLIENTS.map(c => {
+    const g = GROUPS[c.g];
+    const checked = selectedClients.has(c.id);
+    return `<tr onclick="selectClient(${c.id})" id="crow-${c.id}">
+      <td style="width:28px;text-align:center"><input type="checkbox" class="cb" ${checked?'checked':''} onclick="toggleSelect(${c.id},event)"></td>
+      <td class="rut">${c.rut}</td>
+      <td style="font-weight:500">${c.name}</td>
+      <td>${assigned && selectedClients.has(c.id) ? `<span class="asgn" style="background:${g.color}">${g.name}</span>` : `<span style="color:var(--text-sec)">${c.nv}</span>`}</td>
+    </tr>`;
+  }).join('');
+}
+
+function selectClient(id) {
+  selClient = selClient === id ? -1 : id;
+  document.querySelectorAll('#ctbody tr').forEach(r => r.classList.remove('sel'));
+  if (selClient >= 0) {
+    document.getElementById(`crow-${id}`).classList.add('sel');
+    const c = NEW_CLIENTS[id];
+    map.flyTo(c.ll, 14, { duration: 0.8 });
+    newMarkers[id].openTooltip();
+  }
+}
+
+function setActions() {
+  document.getElementById('actionContent').innerHTML = `
+    <button id="btnOptimizar" class="btn btn-p" onclick="ejecutarOptimizacion()">⚡ Ejecutar Optimización</button>
+    <button class="btn btn-o" style="margin-top:6px" onclick="openSat()">📊 Ver saturaciones actuales</button>`;
+  updateOptimizeBtn();
+}
+
+function updateLegend() {
+  const el = document.getElementById('legend');
+  if (phase === 'done') {
+    el.innerHTML = `<div class="leg"><div class="leg-diamond"></div>Bodega</div>` +
+      GROUPS.map(g => `<div class="leg"><div class="leg-dot" style="background:${g.color}"></div>${g.name}</div>`).join('');
+  } else {
+    el.innerHTML = `<div class="leg"><div class="leg-diamond"></div>Bodega central</div><div class="leg" style="color:#9e9e9e"><div class="leg-dot" style="background:#9e9e9e"></div>Sin asignar</div>`;
+  }
+}
+
+// ── SATURATION MODAL ──────────────────────────────────────────────────────
+const DAYS = ['LUN','MAR','MIE','JUE','VIE'];
+const WEEKS = ['S1','S2','S3','S4'];
+function sc(v) { return v >= 85 ? 'sr' : v >= 75 ? 'sy' : v > 40 ? 'sg' : ''; }
+
+function renderSat(mode) {
+  const keys = mode === 'dia' ? DAYS : WEEKS;
+  const prop = mode === 'dia' ? 'sat' : 'wsat';
+  document.getElementById('satBody').innerHTML = `
+    <table class="st"><thead><tr>
+      <th>Grupo Logístico</th><th>Macrozona</th>
+      ${keys.map(k=>`<th>${k}</th>`).join('')}
+    </tr></thead><tbody>
+    ${GROUPS.map(g=>`<tr>
+      <th style="text-align:left;color:${g.color};font-weight:600">${g.name}</th>
+      <th style="text-align:left;font-weight:400;color:var(--text-sec)">${g.zone}</th>
+      ${keys.map(k=>{ const v=g[prop][k]; return v!==undefined?`<td class="${sc(v)}">${v.toFixed(2)}%`:`<td style="color:#bbb">—</td>`; }).join('')}
+    </tr>`).join('')}
+    </tbody></table>`;
+}
+
+function openSat()     { renderSat('dia'); document.getElementById('satModal').classList.add('open'); }
+function closeSat(e)   { if (!e || e.target===document.getElementById('satModal')) document.getElementById('satModal').classList.remove('open'); }
+function satView(m,btn){ document.querySelectorAll('.sat-tog').forEach(b=>b.classList.remove('act')); btn.classList.add('act'); renderSat(m); }
+document.addEventListener('keydown', e => { if (e.key==='Escape') closeSat(); });
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+renderTable(false);
+setActions();
+</script>
+</body>
+</html>
