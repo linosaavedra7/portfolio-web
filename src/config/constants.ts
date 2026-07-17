@@ -7,5 +7,5 @@ export const NAV_LINKS = [
   { label: 'Experiencia', href: '#experiencia' },
   { label: 'Proyectos', href: '#proyectos' },
   { label: 'Sobre mí', href: '#sobre-mi' },
-  { label: 'Contacto', href: 'mailto:linosaavedra2@gmail.com', external: true },
+  { label: 'Contacto', href: 'https://wa.me/56998378427?text=Vi%20tu%20sitio%20web%20de%20desarrollador%2C%20me%20interesa%20contactarte', external: true },
 ] as const;

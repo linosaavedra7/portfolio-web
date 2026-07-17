@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Lino Saavedra — Full Stack Developer',
+  title: 'Lino Saavedra — Proyectos',
   description:
     'Portfolio profesional de Lino Saavedra. Full Stack Developer especializado en React, Next.js y NestJS.',
   keywords: ['full stack developer', 'react', 'nextjs', 'nestjs', 'typescript', 'portfolio'],

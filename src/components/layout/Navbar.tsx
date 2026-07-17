@@ -106,6 +106,7 @@ export function Navbar() {
             <a
               key={link.href}
               href={link.href}
+              {...('external' in link && link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
               className={cn(
                 'relative text-xs sm:text-sm block px-1.5 sm:px-3 py-2 sm:py-1.5 rounded-full transition-colors duration-200',
                 isActive ? 'text-yellow-400 bg-white/5' : 'hover:text-yellow-400',

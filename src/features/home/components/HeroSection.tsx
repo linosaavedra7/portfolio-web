@@ -84,7 +84,7 @@ export function HeroSection() {
             <LinkedInIcon size={16} />
             LinkedIn
           </a>
-          <a href="https://github.com/linosaavedra" target="_blank" rel="noopener noreferrer" className={socialButtonClass}>
+          <a href="https://github.com/linosaavedra7" target="_blank" rel="noopener noreferrer" className={socialButtonClass}>
             <GitHubIcon size={16} />
             GitHub
           </a>

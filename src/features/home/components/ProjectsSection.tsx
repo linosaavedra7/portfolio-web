@@ -149,7 +149,7 @@ const projects = [
   {
     key: 'latam',
     title: 'Sistema de Publicación de Vuelos — LATAM Airlines',
-    description: 'Plataforma interna desarrollada para LATAM Airlines que centraliza la gestión y trazabilidad de las publicaciones de vuelos. La solución consolida movimientos operacionales, optimizó la eficiencia operativa y fortaleció la confiabilidad de los procesos.',
+    description: 'Plataforma interna desarrollada para LATAM Airlines que centraliza la gestión y trazabilidad de las publicaciones de vuelos. La solución consolidó movimientos operacionales, optimizó la eficiencia operativa y fortaleció la confiabilidad de los procesos.',
     tags: ['Next.js', 'React', 'TypeScript', 'Ant Design', 'Python', 'FastAPI', 'PostgreSQL'],
     githubUrl: null,
     liveUrl: '/latam-preview/',
