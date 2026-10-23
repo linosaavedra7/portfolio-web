@@ -287,9 +287,9 @@ const NEW_CLIENTS = [
 // ── MAP SETUP ──────────────────────────────────────────────────────────────
 const map = L.map('map', { center: [-33.458, -70.645], zoom: 12, zoomControl: true });
 
-L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/attributions">CARTO</a>',
-  subdomains: 'abcd', maxZoom: 19,
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  subdomains: 'abc', maxZoom: 19,
 }).addTo(map);
 
 // ── ICONS ─────────────────────────────────────────────────────────────────
