@@ -8,7 +8,7 @@ const darkBrightnessClass: Record<number, string> = {
 };
 
 const companies = [
-  { name: 'Accenture',                               logo: '/assets/companies/accenture.png',           darkBrightness: 2.5, w: 1452, h: 465,  tall: true, maxW: '260px' },
+  { name: 'Accenture',                               logo: '/assets/companies/accenture.png',           darkBrightness: 2.5, w: 1452, h: 465  },
   { name: 'LATAM Airlines',                          logo: '/assets/companies/logo-latam-airlines.png', darkBrightness: 2.5, w: 3301, h: 1009 },
   { name: 'Minera Sierra Gorda',                     logo: '/assets/companies/logo-sierra-gorda.png',   darkBrightness: 2.5, w: 275,  h: 85  },
   { name: 'Minera Collahuasi',                       logo: '/assets/companies/collahuasi.png',           darkBrightness: 2.5, w: 251,  h: 86  },
@@ -47,7 +47,7 @@ export function CompaniesCarousel() {
               alt={company.name}
               width={company.w}
               height={company.h}
-              className={`shrink-0 object-contain ${'maxW' in company ? `max-w-[${company.maxW}]` : 'max-w-[200px]'} ${'tall' in company && company.tall ? 'h-24' : 'h-16'} w-auto grayscale opacity-50 dark:opacity-70 hover:grayscale-0 hover:opacity-100 hover:brightness-100 transition-all duration-300 ${darkBrightnessClass[company.darkBrightness]}`}
+              className={`shrink-0 object-contain max-w-[200px] ${'tall' in company && company.tall ? 'h-24' : 'h-16'} w-auto grayscale opacity-50 dark:opacity-70 hover:grayscale-0 hover:opacity-100 hover:brightness-100 transition-all duration-300 ${darkBrightnessClass[company.darkBrightness]}`}
             />
           ))}
         </div>
