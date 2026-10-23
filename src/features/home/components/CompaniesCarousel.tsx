@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { Fragment } from 'react';
 
 const darkBrightnessClass: Record<number, string> = {
   1:   '',
@@ -8,6 +9,7 @@ const darkBrightnessClass: Record<number, string> = {
 };
 
 const companies = [
+  { name: 'Accenture',                               logo: '/assets/companies/accenture-light.png',     darkBrightness: 2.5, w: 1452, h: 465,  logoDark: '/assets/companies/accenture-dark.png' },
   { name: 'LATAM Airlines',                          logo: '/assets/companies/logo-latam-airlines.png', darkBrightness: 2.5, w: 3301, h: 1009 },
   { name: 'Minera Sierra Gorda',                     logo: '/assets/companies/logo-sierra-gorda.png',   darkBrightness: 2.5, w: 275,  h: 85  },
   { name: 'Minera Collahuasi',                       logo: '/assets/companies/collahuasi.png',           darkBrightness: 2.5, w: 251,  h: 86  },
@@ -39,16 +41,18 @@ export function CompaniesCarousel() {
         <div className="pointer-events-none absolute inset-y-0 right-0 w-16 z-10 bg-gradient-to-l from-[var(--page-bg)] to-transparent" />
 
         <div className="animate-marquee flex items-center gap-12 w-max">
-          {track.map((company, i) => (
-            <Image
-              key={i}
-              src={company.logo}
-              alt={company.name}
-              width={company.w}
-              height={company.h}
-              className={`shrink-0 object-contain max-w-[200px] ${'tall' in company && company.tall ? 'h-24' : 'h-16'} w-auto grayscale opacity-50 dark:opacity-70 hover:grayscale-0 hover:opacity-100 hover:brightness-100 transition-all duration-300 ${darkBrightnessClass[company.darkBrightness]}`}
-            />
-          ))}
+          {track.map((company, i) => {
+            const cls = `shrink-0 object-contain max-w-[200px] ${'tall' in company && company.tall ? 'h-24' : 'h-16'} w-auto grayscale opacity-50 dark:opacity-70 hover:grayscale-0 hover:opacity-100 hover:brightness-100 transition-all duration-300 ${darkBrightnessClass[company.darkBrightness]}`;
+            if ('logoDark' in company) {
+              return (
+                <Fragment key={i}>
+                  <Image src={company.logo} alt={company.name} width={company.w} height={company.h} className={`${cls} dark:hidden`} />
+                  <Image src={company.logoDark} alt={company.name} width={company.w} height={company.h} className={`${cls} hidden dark:block`} />
+                </Fragment>
+              );
+            }
+            return <Image key={i} src={company.logo} alt={company.name} width={company.w} height={company.h} className={cls} />;
+          })}
         </div>
       </div>
     </section>
