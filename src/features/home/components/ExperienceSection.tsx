@@ -25,12 +25,20 @@ function ArrowRightIcon() {
 
 const experiences: { role: string; company: string; period: string; description: ReactNode; link: string | null; current: boolean }[] = [
   {
-    role: 'Software Engineer',
-    company: 'LATAM Airlines',
-    period: 'Abril 2024 — Actualidad',
-    description: <>Uno de mis mayores logros es la construcción del sistema web que permite la <strong>publicación de vuelos de la compañía</strong> y la integración que realiza la asignación del servicio Premium Economy en cada una de las rutas.</>,
+    role: 'Senior Software Engineer',
+    company: 'Accenture',
+    period: 'Septiembre 2026 — Actualidad',
+    description: <>Consultora líder global de tecnología y estrategia, <strong>rankeada #1 a nivel mundial</strong> según Forbes World&apos;s Best Management Consulting Firms 2026. Actualmente desarrollo diversas soluciones digitales y tecnológicas para <strong>Antofagasta Minerals</strong>, uno de los principales grupos mineros de Latinoamérica.</>,
     link: null,
     current: true,
+  },
+  {
+    role: 'Software Engineer',
+    company: 'LATAM Airlines',
+    period: 'Abril 2024 — Septiembre 2026',
+    description: <>Uno de mis mayores logros es la construcción del sistema web que permite la <strong>publicación de vuelos de la compañía</strong> y la integración que realiza la asignación del servicio Premium Economy en cada una de las rutas.</>,
+    link: null,
+    current: false,
   },
   {
     role: 'Software Engineer / Full Stack Developer',
