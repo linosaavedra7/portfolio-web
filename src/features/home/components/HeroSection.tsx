@@ -29,7 +29,7 @@ const socialButtonClass =
 
 export function HeroSection() {
   return (
-    <section className="py-16 md:py-36 scroll-mt-20 w-full mx-auto container lg:max-w-4xl md:max-w-2xl">
+    <section className="py-12 md:py-20 scroll-mt-20 w-full mx-auto container lg:max-w-4xl md:max-w-2xl">
       <div className="max-w-xl">
 
         {/* Avatar + availability badge */}

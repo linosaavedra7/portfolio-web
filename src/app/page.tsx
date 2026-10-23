@@ -23,7 +23,7 @@ export default function Home() {
 
       <main className="px-4">
         <HeroSection />
-        <div className="space-y-24 pb-24">
+        <div className="space-y-16 pb-16">
           <ExperienceSection />
           <CompaniesCarousel />
           <ProjectsSection />
