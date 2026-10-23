@@ -43,7 +43,7 @@ export function CompaniesCarousel() {
         <div className="animate-marquee flex items-center gap-12 w-max">
           {track.map((company, i) => {
             const cls = `shrink-0 object-contain max-w-[200px] ${'tall' in company && company.tall ? 'h-24' : 'h-16'} w-auto grayscale opacity-50 dark:opacity-70 hover:grayscale-0 hover:opacity-100 hover:brightness-100 transition-all duration-300 ${darkBrightnessClass[company.darkBrightness]}`;
-            if ('logoDark' in company) {
+            if ('logoDark' in company && company.logoDark) {
               return (
                 <Fragment key={i}>
                   <Image src={company.logo} alt={company.name} width={company.w} height={company.h} className={`${cls} dark:hidden`} />
