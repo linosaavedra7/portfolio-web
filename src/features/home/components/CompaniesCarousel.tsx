@@ -8,7 +8,7 @@ const darkBrightnessClass: Record<number, string> = {
 };
 
 const companies = [
-  { name: 'Accenture',                               logo: '/assets/companies/accenture.png',           darkBrightness: 2.5, w: 1452, h: 465,  extraClass: 'invert dark:invert-0' },
+  { name: 'Accenture',                               logo: '/assets/companies/accenture.png',           darkBrightness: 2.5, w: 1452, h: 465,  extraClass: 'invert dark:invert-0 hover:invert-0' },
   { name: 'LATAM Airlines',                          logo: '/assets/companies/logo-latam-airlines.png', darkBrightness: 2.5, w: 3301, h: 1009 },
   { name: 'Minera Sierra Gorda',                     logo: '/assets/companies/logo-sierra-gorda.png',   darkBrightness: 2.5, w: 275,  h: 85  },
   { name: 'Minera Collahuasi',                       logo: '/assets/companies/collahuasi.png',           darkBrightness: 2.5, w: 251,  h: 86  },
